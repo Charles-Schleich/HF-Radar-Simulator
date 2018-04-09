@@ -1,6 +1,10 @@
 
 using CSV
 using QML
+# using GR
+using PyPlot # works with JuliaDisplay
+# using Plots
+# using PlotLy
 
 type AntennaObject
     _id::String
@@ -8,6 +12,10 @@ type AntennaObject
     ex::Float64
     ey::Float64
     colour::String
+end
+
+type fileName 
+    filename::String
 end
 
 type distToTarg
@@ -185,17 +193,10 @@ function checkArrSimulate()
 end
 
 function simulate()
-    # print("lol")
-    # include("hfSim_radar.jl")
-    # print("maybe here\n")
-    # print(rxArr,"\n")
-    # print(txArr,"\n")
-    # print(targetArr,"\n")
-    # print(rxArr,txArr,targetArr)
     outputRxAntennaWaveforms(rxArr,txArr,targetArr)
 end
 
-using GR
+
 
 function outputRxAntennaWaveforms(rxArray::Array{AntennaObject},txArray::Array{AntennaObject}, targetArray::Array{AntennaObject})
 
@@ -209,21 +210,49 @@ function outputRxAntennaWaveforms(rxArray::Array{AntennaObject},txArray::Array{A
             summedWaveform=summedWaveform+waveform
         end
         
-        name = string("waveForms/",i._id,".txt")
+        name = string("waveForms/",i._id,".wf")
         writedlm(name, summedWaveform)
         
-        figure();
-        title("Chirp: after first target")
-        xlabel("time ")
-        ylabel("Amplitude")
-        plot(t,summedWaveform)
+        # figure();
+        # title("Chirp: after first target")
+        # xlabel("time ")
+        # ylabel("Amplitude")
+        # plot(t,summedWaveform)
     end
 end
 
-
-
 function tunnelPrint(variable)
     print(variable,"\n")
+end
+
+function getFileNames()
+    path = "waveForms/"
+    key = ".wf"
+    filtered = filter(x->contains(x,key), readdir(path))
+    fNames = map(fileName, filtered)
+    newfileModel = ListModel(fNames)
+    @qmlset qmlcontext().fileModel = newfileModel
+end
+
+# STILL NOT 100%
+
+function showWaveForm(d::JuliaDisplay,w,h)
+    waveform = readdlm("waveForms/RX0.wf")
+    len = length(waveform)
+
+    # f = figure(figsize=(w/80-0.7,h/80-0.7))
+    # f = figure(figsize=(w/80-0.4,h/80-0.4)) # Fullscreen
+    fsize = (w/100+0.6,h/100+0.8)
+
+    f = figure(figsize = fsize  )
+    print(fsize )
+    # x = 0:(pi/100):2*pi
+    # plt = plot(x,sin.(x))
+    # plt = plot(t,abs.(fft(waveform)))
+    plt = plot(t,waveform)
+    display(d,f)
+    close(f)
+    return
 end
 
 
@@ -234,37 +263,8 @@ end
  #    | |   | |____  ____) |   | |    _| |_ | |\  || |__| |    | |____| |__| || |__| || |____ 
  #    |_|   |______||_____/    |_|   |_____||_| \_| \_____|     \_____|\____/ |_____/ |______|
                                                                                             
-type ref
-    name::String
-    xCo::Float64
-end
 
-refArr= AntennaObject[]
-push!(refArr,AntennaObject("test","TX",150.0,150,"green"))
-refModel = ListModel(refArr)
-
-function test()
-
-    emptyArrays()
-    #                    id  , typ ,  x  ,  y  ,colour
-    tx1 = AntennaObject("TX0","TX", 50,50,"green")
-    push!(txArr, tx1)
-    rx1 = AntennaObject("RX0","RX", 200,100,"orange")
-    push!(rxArr,rx1)
-    tar1 = AntennaObject("TAR0","TAR", 200 , 200 ,"blue")
-    tar2 = AntennaObject("TAR1","TAR", 250 , 200 ,"blue")
-    push!(targetArr,tar1 )
-    push!(targetArr,tar2 )
-
-    refArr2 = Array{AntennaObject}
-
-    refArr2= [rxArr;txArr;targetArr]
-    print(length(refArr2))
-
-    refModel2 = ListModel(refArr2)
-    @qmlset qmlcontext().refModel = refModel2
-end
-
+function findTarget()
 
 #############################################################################################################
 
@@ -286,12 +286,15 @@ end
 # dt = CSV.read("objects.csv",types=[String, String, Float64,Float64,String])
 include("hfSim_radar.jl")
 
+files = fileName[]
+fileModel= ListModel(files)
+
 allElem = AntennaObject[]
 allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 
-@qmlfunction targetExists addTarget outputDistances addRecieveAntenna getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel test checkArrSimulate
-@qmlapp "radar.qml" startModel refModel
+@qmlfunction targetExists addTarget outputDistances addRecieveAntenna getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm
+@qmlapp "radar.qml" startModel fileModel
 exec()
 
 

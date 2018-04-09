@@ -1,8 +1,5 @@
 id,typ,ex,ey,colour
 TX0,TX,50,50,green
-RX0,RX,200,100,orange
-RX1,RX,300,100,orange
+RX0,RX,175,50,orange
+RX1,RX,250,50,orange
 TAR0,TAR,200,200,blue
-TAR1,TAR,250,200,blue
-TAR2,TAR,300,300,blue
-TAR3,TAR,350,350,blue

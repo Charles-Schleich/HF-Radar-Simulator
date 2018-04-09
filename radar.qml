@@ -9,7 +9,8 @@ ApplicationWindow {
     id: appRoot
     title: "High Frequency Radar Simulator"
     visible: true
-    width: 1100
+    // width: 1100
+    width: 1600
     height: 500
     
     ListModel {
@@ -242,8 +243,6 @@ ApplicationWindow {
                                 ldLabel.text = "File does not exist"
                                 ldLabel.color = "red"
                              } 
-
-
                     }
                 }
                 Button  {
@@ -265,7 +264,12 @@ ApplicationWindow {
 
                         } 
                 }
-
+                Button  {
+                text: "Objects.CSV"
+                onClicked : { 
+                        filePathTarget.text="objects.csv"
+                            }   
+                }
                 Label{
                     id : ldLabel
                     text: ""
@@ -276,13 +280,6 @@ ApplicationWindow {
 
         RowLayout
         {
-            Button  {
-                text: "Calc Distances"
-                onClicked : { 
-                    Julia.outputDistances()
-                            }   
-            }
-
             Button  {
                 text: "makeWaveforms"
                 onClicked : { 
@@ -297,14 +294,58 @@ ApplicationWindow {
                             }   
             }
 
-            Button  {
-                text: "Test button"
-                onClicked : { 
-                    Julia.tunnelPrint();
-                            }   
-            }
         }
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 
+RowLayout {
+                Layout.fillWidth : true 
+          
+                TableView {
+                    id : waveformTable
+                    Layout.preferredWidth : 400
+                    Layout.maximumWidth :400
+
+                        TableViewColumn {
+                            role: "filename"
+                            title: "File Name"
+                            width: 98
+                        }
+                        model: fileModel
+                    }
+                
+                ColumnLayout
+                {
+                    Label {
+                        id: infoWaveformTable
+                        text: "--"
+                        }
+
+                    Button  {
+                        text: "loadFileNames"
+                        onClicked : { 
+                            Julia.getFileNames()
+                                    }   
+                    }
+
+                    Button  {
+                        text: "Plot"
+                        onClicked : { 
+                            // displayArea.visible = true
+                                Julia.showWaveForm(jdisp,displayArea.width,displayArea.height)
+                                    }   
+                    }
+
+
+                }
+        }// END ROW LAYOUT  Tableview
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+            } //END ColumnLayout
+
+        } // END TARGET RECTANGLE
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -319,10 +360,23 @@ ApplicationWindow {
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
+        Rectangle {
+            id: displayArea
+            height : 500
+            width  : 500
+            color  : "blue"
+            JuliaDisplay{
+                id: jdisp
+                // Layout.fillWidth : true
+                // Layout.fillHeight : true
+                width : 500
+                height: 500
 
-            } //END ColumnLayout
+            }
 
-        } // END TARGET RECTANGLE
+            // visible: false
+        }
+
 
     }// id: rlayout BEGIN
 

@@ -2,6 +2,8 @@
 
 # close("all")
 
+# Shame Liz but this is your moment graduating with your peers.
+
 c = 299792458;    # speed of wave through Medium (here its speed of light in air)
 # c = 340;
 
@@ -20,7 +22,8 @@ dt = 1/fs;  # This is the sample spacing
 # r_max = 600000; # Maximum range to which to simulate in (meters)
 r_max = 600E3; # Maximum range to which to simulate in (meters)
 
-#r_max= 200km
+# Mega x10^6
+# Giga x10^9
 
 t_max = 2*r_max/c; # Time delay to max range
 
@@ -68,13 +71,14 @@ function waveformAtDistance(distance::Float64)
     R1=R1*1000
     td1 = 2*R1/c;# Two way delay to target.
     A1 = 1/R1^2;
-    
-    noise = A1*randn(length(t))
+    # noise = A1*randn(length(t))
     v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T);
-
-    return(v_rx+noise)
+    
+    return(v_rx)
 end
 
+
+waveScaling(R::Float64, G::Float64, σ::Float64 , λ::Float64) = sqrt( ((G^2)*σ*λ)/( ((4*pi)^3)*R^4)) 
 
 # FIRST TARGET
 # R1 = 100000; # My range to target.
@@ -92,6 +96,10 @@ end
 # plot(r,v_rx)
 
 # FFT
+# FFT
+# FFT
+# FFT
+
 # V_TX= fft(v_tx)
 # V_RX= fft(v_rx)
 
