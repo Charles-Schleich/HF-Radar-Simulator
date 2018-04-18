@@ -10,7 +10,7 @@ c = 299792458;    # speed of wave through Medium (here its speed of light in air
 # Nyquist sampling f >= 2* highest
 
 # fs = 441000 ;# This is the sample rate of the sonar.
-fs =  60000000; # This is the sample rate required for 30MHz.
+fs =  60E6; # This is the sample rate required for 30MHz.
 # 125MHz
         
 dt = 1/fs;  # This is the sample spacing

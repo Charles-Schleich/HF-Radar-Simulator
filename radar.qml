@@ -66,16 +66,17 @@ ApplicationWindow {
             Label { text: "Targets" }
             RowLayout {
                 Label { text: "X-Coordinate"}
+                
                 TextField {
                     id: xField
-                    placeholderText: qsTr("Enter X")
+                    placeholderText: qsTr("Enter X (m)")
                     validator: IntValidator {bottom: 0; top: 400;}
                 }
                 
                 Label { text: "Y-Coordinate"}
                 TextField {
                     id:yField
-                    placeholderText: qsTr("Enter Y")
+                    placeholderText: qsTr("Enter Y (m)")
                     validator: IntValidator {bottom: 0; top: 400;}
                 }
 

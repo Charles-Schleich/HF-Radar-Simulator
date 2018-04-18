@@ -43,6 +43,7 @@ targetArr = AntennaObject[]
 function addTarget(xCoord::String , yCoord::String )
     x = parse(Float64,xCoord);
     y = parse(Float64,yCoord);
+    
     id = string("TAR", length(targetArr));
     target = AntennaObject(id,"TAR",x,y,"blue");
     println("Adding Target ", id, "to targetArr");
@@ -163,7 +164,7 @@ end
 
 function outputDistances()
     global rxDistArray = rxDist[]
-    distRxToTargets(rxArr,targetArr) 
+    distRxToTargets(rxArr,targetArr)
 end
 
 function getElemNumber(objType::String)
@@ -174,13 +175,10 @@ function getElemNumber(objType::String)
     end
 end
 
-
-
-
 #   _____  _                    _         _    _               
 #  / ____|(_)                  | |       | |  (_)              
-# | (___   _  _ __ ___   _   _ | |  __ _ | |_  _   ___   _ __  
-#  \___ \ | || '_ ` _ \ | | | || | / _` || __|| | / _ \ | '_ \ 
+# | (___   _  _ __ ___   _   _ | |  __ _ | |_  _   ___   _ ___  
+#  \___ \ | || '_ ` _ \ | | | || | / _` || __|| | / _ \ | '_  \ 
 #  ____) || || | | | | || |_| || || (_| || |_ | || (_) || | | |
 # |_____/ |_||_| |_| |_| \__,_||_| \__,_| \__||_| \___/ |_| |_|
 
@@ -195,8 +193,6 @@ end
 function simulate()
     outputRxAntennaWaveforms(rxArr,txArr,targetArr)
 end
-
-
 
 function outputRxAntennaWaveforms(rxArray::Array{AntennaObject},txArray::Array{AntennaObject}, targetArray::Array{AntennaObject})
 
@@ -264,7 +260,7 @@ end
  #    |_|   |______||_____/    |_|   |_____||_| \_| \_____|     \_____|\____/ |_____/ |______|
                                                                                             
 
-function findTarget()
+# function findTarget()
 
 #############################################################################################################
 
