@@ -11,7 +11,7 @@ ApplicationWindow {
     visible: true
     // width: 1100
     width: 1600
-    height: 500
+    height: 800
     
     ListModel {
         id: emptyModel
@@ -25,9 +25,11 @@ ApplicationWindow {
         anchors.fill: parent
                 spacing: 1
         Rectangle {
-            height : 500
-            width  : 500
+            id: layoutMap
+            height : appRoot.height
+            width  : 800
             color  : "white"
+
             Repeater {// Repeat for each object
                 id: repeatPlotter
                 anchors.fill: parent
@@ -35,17 +37,17 @@ ApplicationWindow {
 
                     Rectangle {
                         color: colour
-                        x: 500*ex/400
-                        y: 500-500*ey/400
+                        x: layoutMap.width*ex/200000
+                        y: layoutMap.height*(1-ey/200000)
 
                         width :5
                         height:5
 
-                        Text {
-                            text: _id
-                            width: parent.width
-                            height: parent.height
-                        }
+                        // Text {
+                        //     text: _id
+                        //     width: parent.width
+                        //     height: parent.height
+                        // }
                     }
                 
 
@@ -59,7 +61,7 @@ ApplicationWindow {
             id: rect1
             color : "white"
             height : appRoot.height
-            width : 600
+            width : 800
             
             ColumnLayout
             {
@@ -70,14 +72,14 @@ ApplicationWindow {
                 TextField {
                     id: xField
                     placeholderText: qsTr("Enter X (m)")
-                    validator: IntValidator {bottom: 0; top: 400;}
+                    validator: IntValidator {bottom: 0; top: 200000;}
                 }
                 
                 Label { text: "Y-Coordinate"}
                 TextField {
                     id:yField
                     placeholderText: qsTr("Enter Y (m)")
-                    validator: IntValidator {bottom: 0; top: 400;}
+                    validator: IntValidator {bottom: 0; top: 200000;}
                 }
 
                 Button  {
@@ -85,8 +87,8 @@ ApplicationWindow {
                 onClicked : { 
                             if (xField.text!="" && yField.text!="") 
                                 {
-                                var x = parseInt(xField.text)
-                                var y = parseInt(yField.text)
+                                var x = (xField.text)
+                                var y = (yField.text)
                                 if (Julia.targetExists(x,y)==true){
                                     infoTar.text = "object exists at Coords"
                                     infoTar.color = "red"
@@ -118,7 +120,7 @@ ApplicationWindow {
                 TextField {
                     id: xFieldRx
                     placeholderText: qsTr("Enter X")
-                    validator: IntValidator {bottom: 0; top: 400;}
+                    validator: IntValidator {bottom: 0; top: 200000;}
                 }
                 
                 Label { text: "Y-Coordinate"}
@@ -126,7 +128,7 @@ ApplicationWindow {
                 TextField {
                     id:yFieldRx
                     placeholderText: qsTr("Enter Y")
-                    validator: IntValidator {bottom: 0; top: 400;}
+                    validator: IntValidator {bottom: 0; top: 200000;}
                 }
 
                 Button  {
@@ -134,9 +136,8 @@ ApplicationWindow {
                 onClicked : { 
                             if (xFieldRx.text!="" && yFieldRx.text!="") 
                                 {
-                                var x = parseInt(xFieldRx.text)
-                                var y = parseInt(yFieldRx.text)
-
+                                var x = (xFieldRx.text)
+                                var y = (yFieldRx.text)
                                 if (Julia.targetExists(x,y)==true){
                                     infoTar.text = "object exists at Coords"
                                     infoTar.color = "red"
@@ -147,6 +148,7 @@ ApplicationWindow {
                                     Julia.addRecieveAntenna(xFieldRx.text, yFieldRx.text)
                                     infoTar.text = "RX Added"
                                     infoTar.color = "orange"
+
                                     }
                                 }
                                 else{
@@ -271,6 +273,14 @@ ApplicationWindow {
                         filePathTarget.text="objects.csv"
                             }   
                 }
+                Button  {
+                text: "testSc1.CSV"
+                onClicked : { 
+                        filePathTarget.text="testSc1.csv"
+                            }   
+                }
+
+
                 Label{
                     id : ldLabel
                     text: ""
@@ -292,6 +302,13 @@ ApplicationWindow {
                         ldLabel.color= "red"
                         ldLabel.text="Need 1 Tx, Rx and Target to simulate"
                     }
+                            }   
+            }
+
+             Button  {
+                text: "calcDistances"
+                onClicked : { 
+                        Julia.outputDistances()
                             }   
             }
 
@@ -356,28 +373,24 @@ RowLayout {
  //     | |   |  __|   \___ \    | |     | |  | . ` || | |_ |    | |    | |  | || |  | ||  __|  
  //     | |   | |____  ____) |   | |    _| |_ | |\  || |__| |    | |____| |__| || |__| || |____ 
  //     |_|   |______||_____/    |_|   |_____||_| \_| \_____|     \_____|\____/ |_____/ |______|
-
  
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+        // Rectangle {
+        //     id: displayArea
+        //     height : 500
+        //     width  : 500
+        //     color  : "blue"
+        //     JuliaDisplay{
+        //         id: jdisp
+        //         // Layout.fillWidth : true
+        //         // Layout.fillHeight : true
+        //         width : 500
+        //         height: 500
 
-        Rectangle {
-            id: displayArea
-            height : 500
-            width  : 500
-            color  : "blue"
-            JuliaDisplay{
-                id: jdisp
-                // Layout.fillWidth : true
-                // Layout.fillHeight : true
-                width : 500
-                height: 500
-
-            }
-
-            // visible: false
-        }
-
+        //     }
+        //     // visible: false
+        // }
 
     }// id: rlayout BEGIN
 

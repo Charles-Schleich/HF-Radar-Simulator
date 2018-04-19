@@ -53,6 +53,8 @@ end
 
 
 function addRecieveAntenna(xCoord::String , yCoord::String )
+    print(xCoord,"  ",yCoord)
+    
     x = parse(Float64,xCoord)
     y = parse(Float64,yCoord)
     id = string("RX", length(rxArr))
@@ -62,7 +64,9 @@ function addRecieveAntenna(xCoord::String , yCoord::String )
     updateModel();
 end
 
-function targetExists(x::Float64,y::Float64)
+function targetExists(xCoord::String ,yCoord::String)
+    x = parse(Float64,xCoord)
+    y = parse(Float64,yCoord)
     found = false
     allElememnts = [txArr; targetArr;rxArr]
     for i in allElememnts
@@ -144,9 +148,11 @@ end
 # |_____/|_____||_____/    |_|/_/    \_\|_| \_| \_____||______||_____/
 
 function calcDist(source::AntennaObject , target::AntennaObject)
+
     xs, ys = source.ex, (source.ey)
     xt, yt = target.ex, (target.ey)
-    r = ( (xs-xt)^2 + (ys-yt)^2   )^0.5
+    r = ( (xs-xt)^2 + (ys-yt)^2 )^0.5
+
     return(r)
 end
 
@@ -183,6 +189,7 @@ end
 # |_____/ |_||_| |_| |_| \__,_||_| \__,_| \__||_| \___/ |_| |_|
 
 function checkArrSimulate()
+
     if(length(rxArr)>0 && length(txArr)>0 && length(targetArr)>0)
         return true
     else
@@ -191,7 +198,9 @@ function checkArrSimulate()
 end
 
 function simulate()
+    println("one")
     outputRxAntennaWaveforms(rxArr,txArr,targetArr)
+    
 end
 
 function outputRxAntennaWaveforms(rxArray::Array{AntennaObject},txArray::Array{AntennaObject}, targetArray::Array{AntennaObject})
@@ -202,20 +211,19 @@ function outputRxAntennaWaveforms(rxArray::Array{AntennaObject},txArray::Array{A
         for j in (targetArray)
             txToTarg = calcDist(transmittAntenna,j);
             rxToTarg = calcDist(i,j);
+            # println(txToTarg+rxToTarg)
             waveform = waveformAtDistance( txToTarg + rxToTarg);
             summedWaveform=summedWaveform+waveform
         end
-        
         name = string("waveForms/",i._id,".wf")
         writedlm(name, summedWaveform)
-        
-        # figure();
-        # title("Chirp: after first target")
-        # xlabel("time ")
-        # ylabel("Amplitude")
-        # plot(t,summedWaveform)
+        figure();
+        title("waveforms")
+        ylabel("Amplitude")
+        plot(r,summedWaveform)
     end
 end
+# SAVE ABS AND ANGLE VALUES IF THAT HELPS MAYBE YES ?
 
 function tunnelPrint(variable)
     print(variable,"\n")
@@ -305,4 +313,3 @@ exec()
 # ylabel("Amplitude")
 # grid("on")
 # plot(t,tar0)
-

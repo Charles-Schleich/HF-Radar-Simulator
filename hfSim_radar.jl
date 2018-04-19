@@ -6,6 +6,7 @@ close("all")
 
 c = 299792458;    # speed of wave through Medium (here its speed of light in air)
 # c = 340;
+sf = 2 ; # distance Scaling Factor
 
 # HF waves are 3 MHz to 30 MHz
 # chirp 3MHz -> 5MHz 
@@ -19,15 +20,12 @@ fs =  125E6; # This is the sample rate required for 30MHz.
         
 dt = 1/fs;  # This is the sample spacing
 
-# r_max = 400000; # Maximum range to which to simulate in (meters)
-# r_max = 600000; # Maximum range to which to simulate in (meters)
 r_max = 300E3; # Maximum range to which to simulate in (meters)
 
 # Mega x10^3
 # Mega x10^6
 # Giga x10^9
 
-# 2E8 = 200
 t_max = 2*r_max/c; # Time delay to max range
 
 t = 0:dt:t_max; # define a time vector containing the time values of the samples
@@ -75,23 +73,52 @@ cosWave = cos.( 2*pi*(f0*(t)));
 # grid("on")
 # plot(t,v_tx)
 
-function waveformAtDistance(distance::Float64)
+function waveformAtDistance(distance)
     R1=floor(Int,distance)
-    R1=R1*1000
     td1 = 2*R1/c;# Two way delay to target.
-    A1 = 1/R1^2;
-    # noise = A1*randn(length(t))
+    A1 = 1/R1^sf;
+    #Chirp Signal
     v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T);
-    return(v_rx)
+    #FFT of Chirp
+    V_TX= (fft(v_tx));
+    V_RX= (fft(v_rx));
+
+    # Frequency Axes
+    N=length(t);
+    f_axes = ((fs*2)*(0:N-1)/N);# frequency axis
+
+    # Matched Filtering
+    H = conj(V_TX);
+    V_MF  = H.*V_RX;
+
+    # Window function
+    V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
+    v_mf  = ifft(V_MF)
+    v_mf_window= ifft(V_MF_Window)
+
+    # Analytic Signal 
+    V_ANALYTIC = 2*V_MF 
+    N = length(V_MF);
+    V_ANALYTIC[Int(N/2)+1:Int(N)] = 0;
+    v_analytic = ifft(V_ANALYTIC)
+
+    # BaseBanded
+    v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
+
+    # scale = r.^sf
+    # v_bb_amp_scaled = abs.(v_baseband.*(scale))
+    # v_bb_angle = angle.(v_baseband)
+
+    return(v_baseband)
 end
 
 # waveScaling(R::Float64, G::Float64, σ::Float64 , λ::Float64) = sqrt( ((G^2)*σ*λ)/( ((4*pi)^3)*R^4)) 
 
 
-figure("Original chirp")
-title("Original chirp ")
-grid("on")
-plot(t,v_tx)
+# figure("Original chirp")
+# title("Original chirp ")
+# grid("on")
+# plot(t,v_tx)
 
 
 # FIRST TARGET
@@ -113,12 +140,12 @@ A3 = 1/R3^2;
 v_rx = v_rx + A3*cos.( 2*pi*(f0*(t-td-td3) + 0.5*K*(t-td-td3).^2) ).*rect((t-td-td3)/T)
 
 
-figure("Chirp: after first target")
-title("Chirp: after first target")
-xlabel("Range (km)")
-ylabel("Amplitude")
-grid("on")
-plot(r,v_rx)
+# figure("Chirp: after first target")
+# title("Chirp: after first target")
+# xlabel("Range (km)")
+# ylabel("Amplitude")
+# grid("on")
+# plot(r,v_rx)
 
 # FFT
 # FFT
@@ -139,15 +166,15 @@ df=fs/N;
 # f_axes = (-fs/2)+df/2:df:(fs/2);
 
 #           
-figure("FFT of original chirp")
-title("FFT of original chirp")
-grid("on")
-plot(f_axes , abs.(V_TX))
+# figure("FFT of original chirp")
+# title("FFT of original chirp")
+# grid("on")
+# plot(f_axes , abs.(V_TX))
 
-figure("FFT of chirp at first target")
-title("FFT of chirp at first target")
-grid("on")
-plot(f_axes , abs.(V_RX))
+# figure("FFT of chirp at first target")
+# title("FFT of chirp at first target")
+# grid("on")
+# plot(f_axes , abs.(V_RX))
 
 # # Matched Filtering
 
@@ -160,10 +187,10 @@ H = conj(V_TX);
 
 V_MF  = H.*V_RX;
 
-figure("post Matched Filter in frequency domain")
-title("post Matched Filter in frequency domain")
-grid("on")
-plot(f_axes , abs.(V_MF))
+# figure("post Matched Filter in frequency domain")
+# title("post Matched Filter in frequency domain")
+# grid("on")
+# plot(f_axes , abs.(V_MF))
 # plot(f_axes , imag(V_MF))
 
 myWindow(x)= rect(x).*cos.(x*pi).*cos.(x*pi) 
@@ -178,35 +205,34 @@ v_mf_window= ifft(V_MF_Window)
 # grid("on")
 # plot(t, abs.(v_mf))
 
-figure("The window function ")
-title("The window function")
-grid("on")
-plot(f_axes,myWindow((f_axes-f0)/B))
+# figure("The window function ")
+# title("The window function")
+# grid("on")
+# plot(f_axes,myWindow((f_axes-f0)/B))
 
+# figure("inverse FFT post window ")
+# title("inverse FFT post window ")
+# grid("on")
+# plot(r,real(v_mf))
 
-figure("inverse FFT post window ")
-title("inverse FFT post window ")
-grid("on")
-plot(r,real(v_mf))
-
-figure("Window MF in Frequency")
-title("Window MF in Frequency")
-grid("on")
-plot(abs.(V_MF_Window))
+# figure("Window MF in Frequency")
+# title("Window MF in Frequency")
+# grid("on")
+# plot(abs.(V_MF_Window))
 
 # # figure()
 # # title("Window")
 # # plot((-1:0.1:1),myWindow(-1:0.1:1))
 
-figure("Window MF in time")
-title("Window MF in time")
-grid("on")
-plot(r,real(v_mf_window))
+# figure("Window MF in time")
+# title("Window MF in time")
+# grid("on")
+# plot(r,real(v_mf_window))
 
-figure("Absolute Window MF in time")
-title("Absolute Window MF in time")
-grid("on")
-plot(r,abs.(v_mf_window))
+# figure("Absolute Window MF in time")
+# title("Absolute Window MF in time")
+# grid("on")
+# plot(r,abs.(v_mf_window))
 
 # Analytic Signal
 # Analytic Signal
@@ -217,24 +243,76 @@ N = length(V_MF);
 V_ANALYTIC[Int(N/2)+1:Int(N)] = 0;
 v_analytic = ifft(V_ANALYTIC)
 
-figure("Analytic Signal F Domain")
-title("Analytic Signal F Domain")
-grid("on")
-plot(r,abs.(V_ANALYTIC))
+# figure("Analytic Signal F Domain")
+# title("Analytic Signal F Domain")
+# grid("on")
+# plot(r,abs.(V_ANALYTIC))
 
-figure("Analytic Signal time Domain")
-title("Analytic Signal time Domain")
-grid("on")
-plot(r,abs.(v_analytic))
+# figure("Analytic Signal time Domain")
+# title("Analytic Signal time Domain")
+# grid("on")
+# plot(r,abs.(v_analytic))
 
 # Baseband Translation
 # Baseband Translation
 # Baseband Translation
 
-v_baseband = v_analytic.*exp((-im)*2*pi*f0*t)
+v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
 
-figure()
-subplot(2,1,1)
-plot(r,abs(v_baseband))
-subplot(2,1,2)
-plot(r,angle(v_baseband))
+scale = r.^sf
+v_bb_amp_scaled = abs.(v_baseband.*(scale))
+v_bb_angle = angle.(v_baseband)
+
+# baseBandProcessor
+
+
+
+function findPeaks(wf)
+    max = maximum(v_bb_amp_scaled)
+    ss_pairs =[];
+    strt = false
+    p1 = 0 
+    startStops = []
+
+    for i in 1:length(wf)
+        if ((wf[i] > 0.8*max) && strt==false)
+            p1 = i;
+            strt = true ;
+        end
+        if ((wf[i] < 0.8*max) && strt==true)
+            p2 = i ;
+            strt =false
+            push!(startStops,(p1,p2))
+        end
+    end    
+    peaks = []
+    for j in startStops
+        p1 = j[1]
+        p2 = j[2]
+        subarr = wf[p1:p2]
+        maax=maximum(subarr)
+        loc= (findin(subarr,maax))[1]
+        push!(peaks,p1+loc)
+    end
+    return peaks
+end
+
+
+function findPhases(wf,peaks)
+    peakPhases= []
+    for i in peaks
+        push!(peakPhases,wf[i]) 
+    end
+    return peakPhases
+end
+
+
+# figure()
+# subplot(2,1,1)
+# plot(r,abs(v_baseband))
+# subplot(2,1,2)
+# plot(r,angle(v_baseband))
+
+# figure()
+# subplot(2,1,1)
+# plot(f_axes,abs(fftshift(fft(v_baseband))))
