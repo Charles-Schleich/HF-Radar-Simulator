@@ -73,12 +73,14 @@ cosWave = cos.( 2*pi*(f0*(t)));
 # grid("on")
 # plot(t,v_tx)
 
-function waveformAtDistance(distance)
-    R1=floor(Int,distance)
-    td1 = 2*R1/c;# Two way delay to target.
+function waveformAtDistance(distance) # Distance is in meters
+    println("Dist ",distance)
+    R1 = floor(Int,distance)
+    td1 = R1/c;# Two way delay to target.
     A1 = 1/R1^sf;
     #Chirp Signal
     v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T);
+    # v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T);
     #FFT of Chirp
     V_TX= (fft(v_tx));
     V_RX= (fft(v_rx));
@@ -112,8 +114,9 @@ function waveformAtDistance(distance)
     return(v_baseband)
 end
 
-# waveScaling(R::Float64, G::Float64, σ::Float64 , λ::Float64) = sqrt( ((G^2)*σ*λ)/( ((4*pi)^3)*R^4)) 
 
+
+freq_to_wavelen(f) = (299792458/f)
 
 # figure("Original chirp")
 # title("Original chirp ")
@@ -267,29 +270,32 @@ v_bb_angle = angle.(v_baseband)
 
 
 
-function findPeaks(wf)
-    max = maximum(v_bb_amp_scaled)
+function findPeaks(wf_abs) # Needs to be take the v_bb_scaled 
+    max = maximum(wf_abs)
+   
     ss_pairs =[];
     strt = false
     p1 = 0 
     startStops = []
-
-    for i in 1:length(wf)
-        if ((wf[i] > 0.8*max) && strt==false)
+    bound = 0.8
+    for i in 1:length(wf_abs)
+        if ((wf_abs[i] > bound*max) && strt==false)
             p1 = i;
             strt = true ;
         end
-        if ((wf[i] < 0.8*max) && strt==true)
+        if ((wf_abs[i] < bound*max) && strt==true)
             p2 = i ;
             strt =false
             push!(startStops,(p1,p2))
         end
     end    
+
+
     peaks = []
     for j in startStops
         p1 = j[1]
         p2 = j[2]
-        subarr = wf[p1:p2]
+        subarr = wf_abs[p1:p2]
         maax=maximum(subarr)
         loc= (findin(subarr,maax))[1]
         push!(peaks,p1+loc)
@@ -298,10 +304,10 @@ function findPeaks(wf)
 end
 
 
-function findPhases(wf,peaks)
-    peakPhases= []
+function findPhases(wf_angle,peaks)
+    peakPhases = []
     for i in peaks
-        push!(peakPhases,wf[i]) 
+        push!(peakPhases,wf_angle[i]) 
     end
     return peakPhases
 end
@@ -316,3 +322,82 @@ end
 # figure()
 # subplot(2,1,1)
 # plot(f_axes,abs(fftshift(fft(v_baseband))))
+
+# testExample
+# testExample
+# testExample
+
+
+scale = r.^sf
+
+dist1 = 100026.1659 + 100000
+dist2 = 100026.1659 + 99973.84
+
+sigA_bb = waveformAtDistance(dist1) 
+sigB_bb = waveformAtDistance(dist2)
+
+sigA_bb_scaled , sigB_bb_scaled = abs.(sigA_bb.*(scale)),abs.(sigB_bb.*(scale))
+sigA_bb_angle , sigB_bb_angle = angle.(sigA_bb),angle.(sigB_bb)
+
+sigA_peaks = findPeaks(sigA_bb_scaled)
+sigB_peaks = findPeaks(sigB_bb_scaled)
+
+println(sigA_peaks," ",sigB_peaks)
+
+figure("peaks signals")
+grid("on")
+subplot(2,1,1)
+plot(sigA_bb_scaled)
+subplot(2,1,2)
+plot(sigB_bb_scaled)
+
+
+figure("Phases signals")
+grid("on")
+subplot(2,1,1)
+plot(sigA_bb_angle)
+subplot(2,1,2)
+plot(sigB_bb_angle)
+
+wl = (ceil(Int,freq_to_wavelen(f0)))
+
+totalSamples = length(t)
+
+distA = r_max*sigA_peaks[1]/totalSamples
+distB = r_max*sigB_peaks[1]/totalSamples
+
+# 
+
+phaseA=findPhases(sigA_bb_angle,sigA_peaks)
+phaseB=findPhases(sigB_bb_angle,sigB_peaks)
+
+
+
+
+# Method using Arrays (probably doesnt work)
+# phaseA = -2*pi*f0*distA/wl
+# phaseB = -2*pi*f0*distB/wl
+
+
+println(rad2deg.(phaseA),"\n",rad2deg.(phaseB))
+
+phasediff = phaseA - phaseB
+phasediff2 = phaseB - phaseA
+
+# phasediff
+
+# phasediff = d*sin(x)*2*pi/wl
+# phasediff = d*sin(x)*2*pi/wl
+
+d=37
+println(rad2deg.(phasediff))
+println(rad2deg.(phasediff2))
+
+angle1= asin.(wl*phasediff/(d*2*pi))
+angle2= asin.(wl*phasediff2/(d*2*pi))
+
+print(rad2deg.(angle1))
+print(rad2deg.(angle2))
+
+
+
