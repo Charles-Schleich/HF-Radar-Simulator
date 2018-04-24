@@ -2,8 +2,6 @@ using PyPlot
 
 close("all")
 
-# Shame Liz but this is your moment graduating with your peers.
-
 c = 299792458;    # speed of wave through Medium (here its speed of light in air)
 # c = 340;
 sf = 2 ; # distance Scaling Factor
@@ -13,9 +11,9 @@ sf = 2 ; # distance Scaling Factor
 # Nyquist sampling f >= 2*(highest frequency)
 
 # fs = 441000 ;# This is the sample rate of the sonar.
-# fs =  60000000; # This is the sample rate required for 30MHz.
-# fs =  60E6; # This is the sample rate required for 30MHz.
-fs =  125E6; # This is the sample rate required for 30MHz.
+# fs = 60000000; # This is the sample rate required for 30MHz.
+# fs = 60E6; # This is the sample rate required for 30MHz.
+fs =  30E6; # This is the sample rate required for 30MHz.
 # 125MHz
         
 dt = 1/fs;  # This is the sample spacing
@@ -74,7 +72,8 @@ cosWave = cos.( 2*pi*(f0*(t)));
 # plot(t,v_tx)
 
 function waveformAtDistance(distance) # Distance is in meters
-    println("Dist ",distance)
+    # println("Dist ",distance)
+
     R1 = floor(Int,distance)
     td1 = R1/c;# Two way delay to target.
     A1 = 1/R1^sf;
@@ -101,7 +100,7 @@ function waveformAtDistance(distance) # Distance is in meters
     # Analytic Signal 
     V_ANALYTIC = 2*V_MF 
     N = length(V_MF);
-    V_ANALYTIC[Int(N/2)+1:Int(N)] = 0;
+    V_ANALYTIC[floor(Int,N/2)+1:Int(N)] = 0;
     v_analytic = ifft(V_ANALYTIC)
 
     # BaseBanded
@@ -125,22 +124,22 @@ freq_to_wavelen(f) = (299792458/f)
 
 
 # FIRST TARGET
-R1 = 100E3; # My range to target (m)
-td1 = 2*R1/c;# Two way delay to target.
-A1 = 1/R1^2;
-v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T)
+# R1 = 100E3; # My range to target (m)
+# td1 = 2*R1/c;# Two way delay to target.
+# A1 = 1/R1^2;
+# v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T)
 
-# Second TARGET
-R2 = 120E3; # My range to target (m)
-td2 = 2*R2/c;# Two way delay to target.
-A2 = 1/R2^2;
-v_rx = v_rx + A2*cos.( 2*pi*(f0*(t-td-td2) + 0.5*K*(t-td-td2).^2) ).*rect((t-td-td2)/T)
+# # Second TARGET
+# R2 = 120E3; # My range to target (m)
+# td2 = 2*R2/c;# Two way delay to target.
+# A2 = 1/R2^2;
+# v_rx = v_rx + A2*cos.( 2*pi*(f0*(t-td-td2) + 0.5*K*(t-td-td2).^2) ).*rect((t-td-td2)/T)
 
-# Third TARGET
-R3 = 140E3; # My range to target (m)
-td3 = 2*R3/c;# Two way delay to target.
-A3 = 1/R3^2;
-v_rx = v_rx + A3*cos.( 2*pi*(f0*(t-td-td3) + 0.5*K*(t-td-td3).^2) ).*rect((t-td-td3)/T)
+# # Third TARGET
+# R3 = 140E3; # My range to target (m)
+# td3 = 2*R3/c;# Two way delay to target.
+# A3 = 1/R3^2;
+# v_rx = v_rx + A3*cos.( 2*pi*(f0*(t-td-td3) + 0.5*K*(t-td-td3).^2) ).*rect((t-td-td3)/T)
 
 
 # figure("Chirp: after first target")
@@ -243,7 +242,7 @@ v_mf_window= ifft(V_MF_Window)
 
 V_ANALYTIC = 2*V_MF 
 N = length(V_MF);
-V_ANALYTIC[Int(N/2)+1:Int(N)] = 0;
+V_ANALYTIC[floor(Int,N/2)+1:Int(N)] = 0;
 v_analytic = ifft(V_ANALYTIC)
 
 # figure("Analytic Signal F Domain")
@@ -272,7 +271,7 @@ v_bb_angle = angle.(v_baseband)
 
 function findPeaks(wf_abs) # Needs to be take the v_bb_scaled 
     max = maximum(wf_abs)
-   
+
     ss_pairs =[];
     strt = false
     p1 = 0 
@@ -288,8 +287,7 @@ function findPeaks(wf_abs) # Needs to be take the v_bb_scaled
             strt =false
             push!(startStops,(p1,p2))
         end
-    end    
-
+    end
 
     peaks = []
     for j in startStops
@@ -307,97 +305,121 @@ end
 function findPhases(wf_angle,peaks)
     peakPhases = []
     for i in peaks
-        push!(peakPhases,wf_angle[i]) 
+        push!(peakPhases,(wf_angle[i])) 
     end
     return peakPhases
 end
 
-
-# figure()
-# subplot(2,1,1)
-# plot(r,abs(v_baseband))
-# subplot(2,1,2)
-# plot(r,angle(v_baseband))
-
-# figure()
-# subplot(2,1,1)
-# plot(f_axes,abs(fftshift(fft(v_baseband))))
-
 # testExample
 # testExample
 # testExample
 
 
-scale = r.^sf
+function calculateIncommingAngle(sigA_bb,sigB_bb)
+    # Separate baseband and angle waveforms 
+    scale = r.^sf
+    sigA_bb_scaled , sigB_bb_scaled = abs.(sigA_bb.*(scale)),abs.(sigB_bb.*(scale))
+    sigA_bb_angle , sigB_bb_angle = angle.(sigA_bb),angle.(sigB_bb)
+    #Find peaks
+    sigA_peaks = findPeaks(sigA_bb_scaled)
+    sigB_peaks = findPeaks(sigB_bb_scaled)
 
-dist1 = 100026.1659 + 100000
-dist2 = 100026.1659 + 99973.84
+    # Wavelength at centre Frequency
+    wl = (ceil(Int,freq_to_wavelen(f0)))
 
-sigA_bb = waveformAtDistance(dist1) 
-sigB_bb = waveformAtDistance(dist2)
+    totalSamples = length(t)
 
-sigA_bb_scaled , sigB_bb_scaled = abs.(sigA_bb.*(scale)),abs.(sigB_bb.*(scale))
-sigA_bb_angle , sigB_bb_angle = angle.(sigA_bb),angle.(sigB_bb)
+    # distances to first peak
+    distA = r_max*sigA_peaks[1]/totalSamples
+    distB = r_max*sigB_peaks[1]/totalSamples
 
-sigA_peaks = findPeaks(sigA_bb_scaled)
-sigB_peaks = findPeaks(sigB_bb_scaled)
+    # Phases 
+    phaseA = findPhases(sigA_bb_angle,sigA_peaks)
+    phaseB = findPhases(sigB_bb_angle,sigB_peaks)
+    
+    phaseA_rad = (phaseA[1])
+    phaseB_rad = (phaseB[1])
 
-println(sigA_peaks," ",sigB_peaks)
+    if phaseA_rad <0
+        phaseA_rad = -phaseA_rad 
+    end
+    # Difference in phase 
+    phasediff = phaseB_rad - phaseA_rad
 
-figure("peaks signals")
-grid("on")
-subplot(2,1,1)
-plot(sigA_bb_scaled)
-subplot(2,1,2)
-plot(sigB_bb_scaled)
+    if (phasediff > (pi))
+        phasediff = phasediff-pi
+    end
+    # Distance between antennas
+    d=37.5;
 
+    angleDept_ext = asin.(wl*phasediff/(d*2*pi))
+    angleDept_int=pi/2-angleDept_ext
 
-figure("Phases signals")
-grid("on")
-subplot(2,1,1)
-plot(sigA_bb_angle)
-subplot(2,1,2)
-plot(sigB_bb_angle)
+    angleDept_extRad= rad2deg(angleDept_ext)
+    angleDept_intRad= rad2deg(angleDept_int)
 
-wl = (ceil(Int,freq_to_wavelen(f0)))
+    # println("DistA: ",distA)
+    # println("DistB: ",distB)
+    # println("ext angle:",angleDept_extRad)
+    # println("int angle:",angleDept_intRad)
+    
+    if (distA>distB)
+        #use Internal Angle 
+        println("-- Angle: ", angleDept_intRad ," +-3 degrees")
+        xCoord = distA*sind(angleDept_intRad);
+        yCoord = distA*cosd(angleDept_intRad);
+        println("x: ",xCoord,"\ny: ",yCoord) 
+    else
+        # use Ext angle
+        println("-- Angle: ", angleDept_extRad, " +-3 degrees")
+        xCoord = distA*sind(90-angleDept_intRad);
+        yCoord = distA*cosd(90-angleDept_intRad);
+        println("x: ",-xCoord,"\ny: ",yCoord) 
+    end
 
-totalSamples = length(t)
-
-distA = r_max*sigA_peaks[1]/totalSamples
-distB = r_max*sigB_peaks[1]/totalSamples
-
-# 
-
-phaseA=findPhases(sigA_bb_angle,sigA_peaks)
-phaseB=findPhases(sigB_bb_angle,sigB_peaks)
-
-
-
-
-# Method using Arrays (probably doesnt work)
-# phaseA = -2*pi*f0*distA/wl
-# phaseB = -2*pi*f0*distB/wl
-
-
-println(rad2deg.(phaseA),"\n",rad2deg.(phaseB))
-
-phasediff = phaseA - phaseB
-phasediff2 = phaseB - phaseA
-
-# phasediff
-
-# phasediff = d*sin(x)*2*pi/wl
-# phasediff = d*sin(x)*2*pi/wl
-
-d=37
-println(rad2deg.(phasediff))
-println(rad2deg.(phasediff2))
-
-angle1= asin.(wl*phasediff/(d*2*pi))
-angle2= asin.(wl*phasediff2/(d*2*pi))
-
-print(rad2deg.(angle1))
-print(rad2deg.(angle2))
+end
 
 
+function fromDistCalc(dist1,dist2)
+    sigA_bb = waveformAtDistance(dist1) 
+    sigB_bb = waveformAtDistance(dist2)
+    calculateIncommingAngle(sigA_bb,sigB_bb)
+end
 
+println("\n45 Deg \n----------")
+# 45 Degree Example 
+dist1 = 100026.1667449112 + 100000
+dist2 = 100026.1667449112 + 99973.8404724917
+fromDistCalc(dist1,dist2)
+
+
+println("\n30 Deg \n----------")
+# # 30 Degree Example working
+dist1 = 100032.04465064185 + 100000
+dist2 = 100032.04465064185 + 99967.9582
+fromDistCalc(dist1,dist2)
+
+# 15 Degree
+# dist1 = 100036.22268931974 + 100E3
+# dist2 = 100036.22268931974 + 99963.77825268927
+
+# # 89.98925704127836 Degree
+# dist1 = 100000.01406249902 + 100E3
+# dist2 = 100000.01406249902 + 100E3
+
+println("\n-20 Deg \n----------")
+# -20 Degree STILL GOTTA UNDERSTAND
+dist1 = 99987.18045417151 + 100E3
+dist2 = 99987.18045417151 + 100012.8319633283
+fromDistCalc(dist1,dist2)
+
+println("\n-45 Deg \n----------")
+# -45 Degree
+dist1 = 99973.48701226292 + 100E3
+dist2 = 99973.48701226292 + 100026.52001898746
+fromDistCalc(dist1,dist2)
+
+
+function rangeProfile()
+
+end
