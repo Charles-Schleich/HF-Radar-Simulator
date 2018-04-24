@@ -63,13 +63,6 @@ rect(x)=(1.0*(abs.(x).<=0.5)); # rect Function
 v_tx = cos.( 2*pi*(f0*(t-td) + 0.5*K*(t-td).^2) ).*rect((t-td)/T);
 cosWave = cos.( 2*pi*(f0*(t)));
 
-# CHIRP FIGURE
-# figure()
-# title("Chirp")
-# xlabel("Time (s)")
-# ylabel("Amplitude")
-# grid("on")
-# plot(t,v_tx)
 
 function waveformAtDistance(distance) # Distance is in meters
     # println("Dist ",distance)
@@ -93,9 +86,9 @@ function waveformAtDistance(distance) # Distance is in meters
     V_MF  = H.*V_RX;
 
     # Window function
-    V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
-    v_mf  = ifft(V_MF)
-    v_mf_window= ifft(V_MF_Window)
+    # V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
+    # v_mf  = ifft(V_MF)
+    # v_mf_window= ifft(V_MF_Window)
 
     # Analytic Signal 
     V_ANALYTIC = 2*V_MF 
@@ -106,6 +99,17 @@ function waveformAtDistance(distance) # Distance is in meters
     # BaseBanded
     v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
 
+
+    figure("Analytic Signal time Domain")
+    title("Analytic Signal time Domain")
+    grid("on")
+    subplot(2,1,1)
+    plot(r,abs.(v_analytic))
+    subplot(2,1,2)
+    plot(r,abs.(v_baseband))
+
+    # print(v_analytic==abs.(v_baseband))
+
     # scale = r.^sf
     # v_bb_amp_scaled = abs.(v_baseband.*(scale))
     # v_bb_angle = angle.(v_baseband)
@@ -113,6 +117,51 @@ function waveformAtDistance(distance) # Distance is in meters
     return(v_baseband)
 end
 
+
+function wavAtDist_AfterMF(distance) # Distance is in meters
+
+    R1 = floor(Int,distance)
+    td1 = R1/c;# R is the total delay to the target
+    A1 = 1/R1^sf;
+    #Chirp Signal
+    v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T);
+
+    #FFT of Chirp
+    V_TX= (fft(v_tx));
+    V_RX= (fft(v_rx));
+
+    # Frequency Axes
+    N=length(t);
+    f_axes = ((fs*2)*(0:N-1)/N);# frequency axis
+
+    # Matched Filtering
+    H = conj(V_TX);
+    V_MF  = H.*V_RX;
+    v_mf  = ifft(V_MF)
+
+    # Window function
+    V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
+    v_mf  = ifft(V_MF)
+    v_mf_window= ifft(V_MF_Window)
+
+
+    figure("Before and after window")
+    title("Before and after window")
+    grid("on")
+    subplot(2,1,1)
+    plot(r,abs.(v_mf))
+    subplot(2,1,2)
+    plot(r,abs.(v_mf_window))
+
+    figure()
+    title("Angle")
+    grid("on")
+    subplot(2,1,1)
+    plot(r,angle.(v_mf))
+    subplot(2,1,2)
+    plot(r,angle.(v_mf_window))
+
+end
 
 
 freq_to_wavelen(f) = (299792458/f)
@@ -124,22 +173,22 @@ freq_to_wavelen(f) = (299792458/f)
 
 
 # FIRST TARGET
-# R1 = 100E3; # My range to target (m)
-# td1 = 2*R1/c;# Two way delay to target.
-# A1 = 1/R1^2;
-# v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T)
+R1 = 100E3; # My range to target (m)
+td1 = 2*R1/c;# Two way delay to target.
+A1 = 1/R1^2;
+v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T)
 
-# # Second TARGET
-# R2 = 120E3; # My range to target (m)
-# td2 = 2*R2/c;# Two way delay to target.
-# A2 = 1/R2^2;
-# v_rx = v_rx + A2*cos.( 2*pi*(f0*(t-td-td2) + 0.5*K*(t-td-td2).^2) ).*rect((t-td-td2)/T)
+# Second TARGET
+R2 = 120E3; # My range to target (m)
+td2 = 2*R2/c;# Two way delay to target.
+A2 = 1/R2^2;
+v_rx = v_rx + A2*cos.( 2*pi*(f0*(t-td-td2) + 0.5*K*(t-td-td2).^2) ).*rect((t-td-td2)/T)
 
-# # Third TARGET
-# R3 = 140E3; # My range to target (m)
-# td3 = 2*R3/c;# Two way delay to target.
-# A3 = 1/R3^2;
-# v_rx = v_rx + A3*cos.( 2*pi*(f0*(t-td-td3) + 0.5*K*(t-td-td3).^2) ).*rect((t-td-td3)/T)
+# Third TARGET
+R3 = 140E3; # My range to target (m)
+td3 = 2*R3/c;# Two way delay to target.
+A3 = 1/R3^2;
+v_rx = v_rx + A3*cos.( 2*pi*(f0*(t-td-td3) + 0.5*K*(t-td-td3).^2) ).*rect((t-td-td3)/T)
 
 
 # figure("Chirp: after first target")
@@ -341,7 +390,7 @@ function calculateIncommingAngle(sigA_bb,sigB_bb)
     phaseB_rad = (phaseB[1])
 
     if phaseA_rad <0
-        phaseA_rad = -phaseA_rad 
+        phaseA_rad = - phaseA_rad 
     end
     # Difference in phase 
     phasediff = phaseB_rad - phaseA_rad
@@ -392,12 +441,11 @@ dist1 = 100026.1667449112 + 100000
 dist2 = 100026.1667449112 + 99973.8404724917
 fromDistCalc(dist1,dist2)
 
-
-println("\n30 Deg \n----------")
-# # 30 Degree Example working
-dist1 = 100032.04465064185 + 100000
-dist2 = 100032.04465064185 + 99967.9582
-fromDistCalc(dist1,dist2)
+# println("\n30 Deg \n----------")
+# # # 30 Degree Example working
+# dist1 = 100032.04465064185 + 100000
+# dist2 = 100032.04465064185 + 99967.9582
+# fromDistCalc(dist1,dist2)
 
 # 15 Degree
 # dist1 = 100036.22268931974 + 100E3
@@ -407,19 +455,27 @@ fromDistCalc(dist1,dist2)
 # dist1 = 100000.01406249902 + 100E3
 # dist2 = 100000.01406249902 + 100E3
 
-println("\n-20 Deg \n----------")
-# -20 Degree STILL GOTTA UNDERSTAND
-dist1 = 99987.18045417151 + 100E3
-dist2 = 99987.18045417151 + 100012.8319633283
-fromDistCalc(dist1,dist2)
+# println("\n-20 Deg \n----------")
+# # -20 Degree STILL GOTTA UNDERSTAND
+# dist1 = 99987.18045417151 + 100E3
+# dist2 = 99987.18045417151 + 100012.8319633283
+# fromDistCalc(dist1,dist2)
 
-println("\n-45 Deg \n----------")
-# -45 Degree
-dist1 = 99973.48701226292 + 100E3
-dist2 = 99973.48701226292 + 100026.52001898746
-fromDistCalc(dist1,dist2)
+# println("\n-45 Deg \n----------")
+# # -45 Degree
+# dist1 = 99973.48701226292 + 100E3
+# dist2 = 99973.48701226292 + 100026.52001898746
+# fromDistCalc(dist1,dist2)
 
 
-function rangeProfile()
+function rangeProfileFinder(signalArray)
+    numSignals = length(signalArray)
+    shifts = ??
+    for i in shifts
+        addedTotal=0
+        for sig in signalArray
+            addedTotal = addedTotal + (sig[i])
+        end
+    end
 
 end
