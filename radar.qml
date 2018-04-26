@@ -40,7 +40,7 @@ ApplicationWindow {
                         x: layoutMap.width*ex/200000
                         y: layoutMap.height*(1-ey/200000)
 
-                        width :5
+                        width :2
                         height:5
 
                         // Text {
@@ -251,7 +251,8 @@ ApplicationWindow {
                 Button  {
                     text: "Load File"
                     onClicked : { 
-                        var exists = Julia.isfile(filePathTarget.text)
+
+                        var exists = Julia.isfile("scenarios/"+filePathTarget.text)
                         if (exists==true)
                             {
                             ldLabel.text = "Loaded (hopefully)";
@@ -279,7 +280,18 @@ ApplicationWindow {
                         filePathTarget.text="testSc1.csv"
                             }   
                 }
-
+                Button  {
+                text: "testSc2.CSV"
+                onClicked : { 
+                        filePathTarget.text="testSc2.csv"
+                            }   
+                }
+                Button  {
+                text: "testSc3.CSV"
+                onClicked : { 
+                        filePathTarget.text="testSc3.csv"
+                            }   
+                }
 
                 Label{
                     id : ldLabel
@@ -292,7 +304,7 @@ ApplicationWindow {
         RowLayout
         {
             Button  {
-                text: "makeWaveforms"
+                text: "make BaseBand Waveforms"
                 onClicked : { 
                     if (Julia.checkArrSimulate()==true)
                     {
@@ -312,15 +324,18 @@ ApplicationWindow {
                             }   
             }
 
+            Button  {
+                text: "make Post MF Waveforms"
+                onClicked : { 
+                        Julia.SimRangeFinder()
+                            }   
+            }
         }
-///////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 RowLayout {
                 Layout.fillWidth : true 
-          
                 TableView {
                     id : waveformTable
                     Layout.preferredWidth : 400

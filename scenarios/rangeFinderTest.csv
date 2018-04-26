@@ -1,0 +1,5 @@
+id,typ,ex,ey,colour
+TX0,TX,50000,50000,green
+RX0,RX,175000,50000,orange
+RX1,RX,250000,50000,orange
+TAR0,TAR,200000,200000,blue

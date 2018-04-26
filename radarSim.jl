@@ -12,6 +12,7 @@ type AntennaObject
     ex::Float64
     ey::Float64
     colour::String
+    wf::Array{Complex{Float64},1}
 end
 
 type fileName 
@@ -45,7 +46,7 @@ function addTarget(xCoord::String , yCoord::String )
     y = parse(Float64,yCoord);
     
     id = string("TAR", length(targetArr));
-    target = AntennaObject(id,"TAR",x,y,"blue");
+    target = AntennaObject(id,"TAR",x,y,"blue",[]);
     println("Adding Target ", id, "to targetArr");
     push!(targetArr, target);
     updateModel();
@@ -58,7 +59,7 @@ function addRecieveAntenna(xCoord::String , yCoord::String )
     x = parse(Float64,xCoord)
     y = parse(Float64,yCoord)
     id = string("RX", length(rxArr))
-    target = AntennaObject(id,"RX",x,y,"orange")
+    target = AntennaObject(id,"RX",x,y,"orange",[])
     println("Adding Recieve Antenna ", id," to rxArr")
     push!(rxArr, target)
     updateModel();
@@ -84,14 +85,14 @@ end
 function readInCSV(fileName::String)
     # emptying Arrays
     emptyArrays()
-
+    fileName=string("scenarios/",fileName)
     dt = CSV.read(fileName,types=[String, String, Float64,Float64,String])
     numRows = size(dt)[1]
     fail=0
     for i in 1:numRows 
         id,typ,ex,ey,colour = dt[1][i] , dt[2][i] , dt[3][i] , dt[4][i] , dt[5][i]
         
-        tempTarget = AntennaObject(id,typ,ex,ey,colour)
+        tempTarget = AntennaObject(id,typ,ex,ey,colour,[])
 
         if typ =="TX"
             push!(txArr,tempTarget)
@@ -225,6 +226,35 @@ function outputRxAntennaWaveforms(rxArray::Array{AntennaObject},txArray::Array{A
 end
 # SAVE ABS AND ANGLE VALUES IF THAT HELPS MAYBE YES ?
 
+function SimRangeFinder()
+    println("---")
+    makePostMFWaveforms(rxArr,txArr,targetArr)
+end
+
+
+function makePostMFWaveforms(rxArray::Array{AntennaObject},txArray::Array{AntennaObject}, targetArray::Array{AntennaObject})
+    transmittAntenna=txArray[1]
+    dispWf=zeros(t)
+    for i in (rxArray)
+        summedWaveform = zeros(t)
+        for j in (targetArray)
+            txToTarg = calcDist(transmittAntenna,j);
+            rxToTarg = calcDist(i,j);
+            waveform = wavAtDist_AfterMF(txToTarg + rxToTarg);
+            summedWaveform=summedWaveform+ abs.(waveform)
+        end
+        i.wf = summedWaveform
+        dispWf = dispWf+summedWaveform
+        # name = string("waveForms/",i._id,".wf")
+        # writedlm(name, summedWaveform)
+    end
+        figure();
+        title("summed WF")
+        ylabel("Amplitude")
+        plot(r,dispWf)
+end
+# SAVE ABS AND ANGLE VALUES IF THAT HELPS MAYBE YES ?
+
 function tunnelPrint(variable)
     print(variable,"\n")
 end
@@ -297,7 +327,7 @@ allElem = AntennaObject[]
 allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 
-@qmlfunction targetExists addTarget outputDistances addRecieveAntenna getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm
+@qmlfunction targetExists addTarget outputDistances addRecieveAntenna getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder
 @qmlapp "radar.qml" startModel fileModel
 exec()
 

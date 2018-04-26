@@ -58,10 +58,8 @@ td = 0.6*T; # Chirp delay
 
 rect(x)=(1.0*(abs.(x).<=0.5)); # rect Function 
 
-# v_tx = cos.( 2*pi*(f0*(t-td) + 0.5*K*(t-td).^2) ).*rect((t-td)/T);
-
 v_tx = cos.( 2*pi*(f0*(t-td) + 0.5*K*(t-td).^2) ).*rect((t-td)/T);
-cosWave = cos.( 2*pi*(f0*(t)));
+# cosWave = cos.( 2*pi*(f0*(t)));
 
 
 function waveformAtDistance(distance) # Distance is in meters
@@ -85,7 +83,7 @@ function waveformAtDistance(distance) # Distance is in meters
     H = conj(V_TX);
     V_MF  = H.*V_RX;
 
-    # Window function
+    # Window function ????
     # V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
     # v_mf  = ifft(V_MF)
     # v_mf_window= ifft(V_MF_Window)
@@ -145,22 +143,24 @@ function wavAtDist_AfterMF(distance) # Distance is in meters
     v_mf_window= ifft(V_MF_Window)
 
 
-    figure("Before and after window")
-    title("Before and after window")
-    grid("on")
-    subplot(2,1,1)
-    plot(r,abs.(v_mf))
-    subplot(2,1,2)
-    plot(r,abs.(v_mf_window))
+    # figure("Before and after window")
+    # title("Before and after window")
+    # grid("on")
+    # subplot(2,1,1)
+    # plot(r,abs.(v_mf))
+    # subplot(2,1,2)
+    # plot(r,abs.(v_mf_window))
 
-    figure()
-    title("Angle")
-    grid("on")
-    subplot(2,1,1)
-    plot(r,angle.(v_mf))
-    subplot(2,1,2)
-    plot(r,angle.(v_mf_window))
+    # figure()
+    # title("Angle")
+    # grid("on")
+    # subplot(2,1,1)
+    # plot(r,angle.(v_mf))
+    # subplot(2,1,2)
+    # plot(r,angle.(v_mf_window))
+    
 
+    return(v_mf_window)
 end
 
 
@@ -435,11 +435,11 @@ function fromDistCalc(dist1,dist2)
     calculateIncommingAngle(sigA_bb,sigB_bb)
 end
 
-println("\n45 Deg \n----------")
-# 45 Degree Example 
-dist1 = 100026.1667449112 + 100000
-dist2 = 100026.1667449112 + 99973.8404724917
-fromDistCalc(dist1,dist2)
+# println("\n45 Deg \n----------")
+# # 45 Degree Example 
+# dist1 = 100026.1667449112 + 100000
+# dist2 = 100026.1667449112 + 99973.8404724917
+# fromDistCalc(dist1,dist2)
 
 # println("\n30 Deg \n----------")
 # # # 30 Degree Example working
@@ -470,12 +470,31 @@ fromDistCalc(dist1,dist2)
 
 function rangeProfileFinder(signalArray)
     numSignals = length(signalArray)
-    shifts = ??
-    for i in shifts
+    # shifts = ?
+?    for i in 10
         addedTotal=0
         for sig in signalArray
             addedTotal = addedTotal + (sig[i])
         end
     end
-
 end
+
+
+function testXcorr()
+    a = abs.(wavAtDist_AfterMF(100E3));
+    b = abs.(wavAtDist_AfterMF(200E3));
+    c = xcorr(a,b)
+    d = xcorr(b,a)
+
+    figure()
+    subplot(3,1,1)
+    plot(a)
+    subplot(3,1,2)
+    plot(b)
+    subplot(3,1,3)
+    plot(c)
+    plot(d)
+end
+
+
+
