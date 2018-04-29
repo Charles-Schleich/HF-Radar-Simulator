@@ -10,8 +10,8 @@ ApplicationWindow {
     title: "High Frequency Radar Simulator"
     visible: true
     // width: 1100
-    width: 1600
-    height: 800
+    width: 1200
+    height: 600
     
     ListModel {
         id: emptyModel
@@ -26,8 +26,8 @@ ApplicationWindow {
                 spacing: 1
         Rectangle {
             id: layoutMap
-            height : appRoot.height
-            width  : 800
+            height : 600
+            width  : 600
             color  : "white"
 
             Repeater {// Repeat for each object
@@ -39,357 +39,291 @@ ApplicationWindow {
                         color: colour
                         x: layoutMap.width*ex/200000
                         y: layoutMap.height*(1-ey/200000)
-
                         width :2
                         height:5
 
-                        // Text {
-                        //     text: _id
-                        //     width: parent.width
-                        //     height: parent.height
-                        // }
                     }
-                
 
             } //end Repeater
-        }
+        } // END VIEW RECTANGLE
 
     // MENU
-    // MENU
-    // MENU
+    ColumnLayout {
+        id: row1
         Rectangle {
             id: rect1
             color : "white"
-            height : appRoot.height
-            width : 800
+            border.width : 1
+            border.color :  "light grey"
+            height : appRoot.height/2
+            width : 320
             
             ColumnLayout
             {
-            Label { text: "Targets" }
-            RowLayout {
-                Label { text: "X-Coordinate"}
-                
-                TextField {
-                    id: xField
-                    placeholderText: qsTr("Enter X (m)")
-                    validator: IntValidator {bottom: 0; top: 200000;}
-                }
-                
-                Label { text: "Y-Coordinate"}
-                TextField {
-                    id:yField
-                    placeholderText: qsTr("Enter Y (m)")
-                    validator: IntValidator {bottom: 0; top: 200000;}
-                }
+/////Simulation Paramaters
 
-                Button  {
-                text: "Add Target"
-                onClicked : { 
-                            if (xField.text!="" && yField.text!="") 
-                                {
-                                var x = (xField.text)
-                                var y = (yField.text)
-                                if (Julia.targetExists(x,y)==true){
-                                    infoTar.text = "object exists at Coords"
-                                    infoTar.color = "red"
-                                    }
-                                else{
-                                    var num = Julia.getElemNumber("TAR")
-                                    var id= "TAR" + num
-                                    Julia.addTarget(xField.text, yField.text)
-                                    infoTar.text = "Target Added"
-                                    infoTar.color = "black"
-                                    }
-                                }
-                                else{
-                                    infoTar.text = "Invalid Coordinates"
-                                    infoTar.color = "red"
-                                }
-                            }
-                }
-            } // END TOP ROW
+            Label { 
+                text: "Simulation Parameters"
+                font.underline : true
+                 }
             
-
-
-            // SECOND ROW
-            Label { text: "Recieve Antenna" }
             RowLayout {
-                
-                Label { text: "X-Coordinate"}
-                
+                Label { text: "Centre Frequency (f0):    " }
                 TextField {
-                    id: xFieldRx
-                    placeholderText: qsTr("Enter X")
-                    validator: IntValidator {bottom: 0; top: 200000;}
+                    id:centreFreq
+                    placeholderText: qsTr("i.e. 400000Hz")
+                    validator: IntValidator { bottom: 0; top: 4000000;}
                 }
-                
-                Label { text: "Y-Coordinate"}
-                
-                TextField {
-                    id:yFieldRx
-                    placeholderText: qsTr("Enter Y")
-                    validator: IntValidator {bottom: 0; top: 200000;}
-                }
+                Label { id:cfStar; color:"red"; text: "" }
+            }
 
-                Button  {
-                text: "Add Recieve Antenna"
-                onClicked : { 
-                            if (xFieldRx.text!="" && yFieldRx.text!="") 
-                                {
-                                var x = (xFieldRx.text)
-                                var y = (yFieldRx.text)
-                                if (Julia.targetExists(x,y)==true){
-                                    infoTar.text = "object exists at Coords"
-                                    infoTar.color = "red"
-                                    }
-                                else{
-                                    var num = Julia.getElemNumber("RX")
-                                    var id= "RX " + num
-                                    Julia.addRecieveAntenna(xFieldRx.text, yFieldRx.text)
-                                    infoTar.text = "RX Added"
-                                    infoTar.color = "orange"
-
-                                    }
-                                }
-                                else{
-                                    infoTar.text = "Invalid Coordinates"
-                                    infoTar.color = "red"
-                                }
-                            }
-                }
-            } // END SECOND ROW
-// //////////////////////////////////////////////////////////////////////////////////////
             RowLayout {
-                Layout.fillWidth : true 
-          
-                TableView {
+                Label { text: "Bandwidth (B):                   " }
+                TextField {
+                    id:bandWidth
+                    placeholderText: qsTr("i.e. 400000Hz")
+                    validator: IntValidator { bottom: 0; top: 4000000;}
+                }
+                 Label { id:bwStar; color:"red"; text: "" }
+            }
+
+            RowLayout {
+
+                // Label { text: "Sample Frequency (fs):   " }
+                Label { text: "Sample rate (fs):                " }
+                TextField {
+                    id: sampleR
+                    placeholderText: qsTr("i.e. 100000")
+                    validator: IntValidator { bottom: 0; top: 200000;}
+                }
+                 Label { id:sfStar; color:"red"; text: "" }
+            }
+            
+            RowLayout {
+                Label { text: "No* Recv Antennas(N):   " }
+                TextField {
+                    id: noAntenna
+                    placeholderText: qsTr(" 2 - 10 ")
+                    validator: IntValidator { bottom: 0; top: 10;}
+                }
+                 Label { id:nAStar; color:"red"; text: "" }
+            }
+            Label {text: ""  }
+/////Simulation Paramaters
+
+/////RECIEVE ANTENNAS
+            Label { 
+                text: "Antenna Array Start Coordinates" 
+                font.underline : true
+            }
+
+            RowLayout {
+                Label { text: "X-Coordinate:" }
+                TextField {
+                    id: rxAntennaX
+                    placeholderText: qsTr("i.e. 100")
+                    validator: IntValidator { bottom: 0; top: 200000;}
+                }
+                 Label { id:rxStar; color:"red"; text: "" }
+            }
+
+            RowLayout {
+                Label { text: "Y-Coordinate:" }
+                TextField {
+                    id: rxAntennaY
+                    placeholderText: qsTr("i.e. 100")
+                    validator: IntValidator { bottom: 0; top: 200000;}
+                }
+                 Label { id:ryStar; color:"red"; text: "" }
+            }
+             
+            Label { id: instructRec; text: "Note: RX antennas 2->N will be auto placed at\n 1/2 Wavelength intervals for centre frequency"; color: "blue"}
+
+
+            RowLayout {
+            Button  {
+                text: "Confirm Sim Parameters"
+                onClicked : {
+                    infoSimParams.text = ""
+                    var cfCheck = false
+                    var bWCheck = false
+                    var sFCheck = false
+                    var nACheck = false
+                    var rXCheck = false
+                    var rYCheck = false
+
+
+                    if (centreFreq.text==""){cfStar.text="*"}
+                    else{cfStar.text=""; cfCheck=true;}
+
+                    if (bandWidth.text==""){bwStar.text="*"}
+                    else{bwStar.text=""; bWCheck=true;}
+
+                    if (sampleR.text==""){sfStar.text="*"}
+                    else{sfStar.text=""; sFCheck=true;}
+                    
+                    if (noAntenna.text==""){nAStar.text="*"}
+                    else{nAStar.text=""; nACheck=true;}
+
+                    if (rxAntennaX.text==""){rxStar.text="*"}
+                    else{rxStar.text=""; rXCheck=true;}
+
+                    if (rxAntennaY.text==""){ryStar.text="*"}
+                    else{ryStar.text=""; rYCheck=true;}
+                    
+                    // ACCEPTED
+                    if (cfCheck==true && bWCheck==true && sFCheck==true && nACheck==true && rXCheck==true && rYCheck==true) {
+                        
+                        var a = Julia.initParams(centreFreq.text,bandWidth.text,sampleR.text)
+                        var b = Julia.addRxAntennas(rxAntennaX.text,rxAntennaY.text,noAntenna.text)
+
+                        infoSimParams.text = a
+                        infoSimParams.color = "Green"
+                    }
+                    else{
+                        infoSimParams.text = "Empty Params"
+                        infoSimParams.color = "red"
+                    }
+
+                }
+
+                }
+                Label { id: infoSimParams; text: "" }         
+            }
+
+               
+
+/////RECIEVE ANTENNAS
+
+            } //End ColumnLayout
+        } // End rect1
+
+    Rectangle {
+        id: rect12
+        color : "white"
+        height : appRoot.height/2
+        width : 320
+        }
+    } // end row1
+
+    Rectangle {
+        id: rect2
+        color : "white"
+        border.width : 0
+        border.color :  "light grey"
+        height : appRoot.height
+        width : 300
+        
+     ColumnLayout
+            {
+
+        Label { text: "Target Coordinates" ; font.underline : true}
+
+        RowLayout {
+            Label { text: "X-Coordinate" }
+            TextField {
+                id: tarX
+                placeholderText: qsTr("i.e. 100m")
+                validator: IntValidator { bottom: 0; top: 200000;}
+                }
+                Label { id:txStar; color:"red"; text: "" }
+            }
+
+        RowLayout {
+            Label { text: "Y-Coordinate" }
+            TextField {
+                id: tarY
+                placeholderText: qsTr("i.e. 100m")
+                validator: IntValidator { bottom: 0; top: 200000;}
+                }
+                Label { id:tyStar; color:"red"; text: "" }
+            }
+
+            RowLayout {
+                Button {
+                    text: "Add Target"
+                    onClicked : { 
+
+                        var tXCheck = false
+                        var tYCheck = false
+
+                        if (tarX.text==""){txStar.text="*"}
+                        else{txStar.text=""; tXCheck=true;}
+
+                        if (tarY.text==""){tyStar.text="*"}
+                        else{tyStar.text=""; tYCheck=true;}
+
+                        if (tXCheck==true && tYCheck==true) {
+                            var x = (tarX.text)
+                            var y = (tarY.text)
+                            if (Julia.targetExists(x,y)==true){
+                                infoTar.text = "Object exists at Coords"
+                                infoTar.color = "red"
+                                }
+                            else{
+                                var num = Julia.getElemNumber("TAR")
+                                var id= "TAR" + num
+                                Julia.addTarget(tarX.text, tarY.text)
+                                infoTar.text = "Target Added"
+                                infoTar.color = "green"
+                                }
+                        }
+                        else{ 
+                            infoTar.text = "Empty Params"
+                            infoTar.color = "red"
+                        }
+
+
+
+                    }
+                }
+                    Label { id: infoTar; text: "" }         
+            }// End Add Target 
+        Label { text: "" }   
+
+
+        TableView {
                     id : tbViewTar
-                    Layout.preferredWidth : 400
-                    Layout.maximumWidth :400
+                    Layout.preferredWidth :300
+                    Layout.maximumWidth :300
 
                         TableViewColumn {
                             role: "typ"
                             title: "typ"
-                            width: 98
+                            width: 50
                         }
                         TableViewColumn {
                             role: "_id"
                             title: "id"
-                            width: 100
+                            width: 50
                         }
                         TableViewColumn {
                             role: "ex"
-                            title: "X Coordiante"
-                            width: 100
+                            title: "X-Coordiante"
+                            width: 99
                         }
                         TableViewColumn {
                             role: "ey"
                             title: "Y-Coordinate"
-                            width: 100
+                            width: 99
                         }
                         model: startModel
                     }
-                
-                ColumnLayout
-                {
-                    Label {
-                        id: infoTar
-                        text: "--"
-                        }
 
-                    Button  {
-                        text: "Clear All Targets"
-                        onClicked : { 
-                            // tbViewTar.model.clear()
-                            // repeatPlotter.model.clear()
 
-                            Julia.emptyArrays()
-
-                                    }   
-                    }
-
-                    Button  {
-                        text: "Clear Target"
-                        onClicked : { 
-                                    infoTar.text = "Clicked button"
-                                    }   
-                    }
-
-                }
-        }// END ROW LAYOUT  Tableview
-
-////////////////////////////////////////////////////////////////////////////////////////
-        ColumnLayout
-        {
-            id: loadFile
-            Label { text: "Load Target File" }
-
-            RowLayout {
-                TextField {
-                    id: filePathTarget
-                    Layout.preferredWidth : 200
-                    Layout.maximumWidth :200
-                    placeholderText: qsTr("Enter Filename")
-                    validator: RegExpValidator { regExp: /[0-9A-Za-z/.]+/ }
-                    onAccepted: {
-
-                        var exists = Julia.isfile(filePathTarget.text)
-                        if (exists==true)
-                            {
-                            ldLabel.text = "Loaded (hopefully)";
-                            ldLabel.color = "black";
-                            Julia.emptyArrays()
-                            //This loads new Model in function readInCSV
-                            Julia.readInCSV(filePathTarget.text)
-                            }
-                        else {
-                                ldLabel.text = "File does not exist"
-                                ldLabel.color = "red"
-                             } 
-                    }
-                }
-                Button  {
-                    text: "Load File"
-                    onClicked : { 
-
-                        var exists = Julia.isfile("scenarios/"+filePathTarget.text)
-                        if (exists==true)
-                            {
-                            ldLabel.text = "Loaded (hopefully)";
-                            ldLabel.color = "black";
-                            Julia.emptyArrays()
-                            //This loads new Model in function readInCSV
-                            Julia.readInCSV(filePathTarget.text)
-                            }
-                        else {
-                                ldLabel.text = "File does not exist"
-                                ldLabel.color = "red"
-                             }  
-
-                        } 
-                }
-                Button  {
-                text: "Objects.CSV"
-                onClicked : { 
-                        filePathTarget.text="objects.csv"
-                            }   
-                }
-                Button  {
-                text: "testSc1.CSV"
-                onClicked : { 
-                        filePathTarget.text="testSc1.csv"
-                            }   
-                }
-                Button  {
-                text: "testSc2.CSV"
-                onClicked : { 
-                        filePathTarget.text="testSc2.csv"
-                            }   
-                }
-                Button  {
-                text: "testSc3.CSV"
-                onClicked : { 
-                        filePathTarget.text="testSc3.csv"
-                            }   
-                }
-
-                Label{
-                    id : ldLabel
-                    text: ""
-                }
-
+        Button {
+            text: "Load Default Parameters"
+            onClicked : {var a = Julia.loadDefaults()
+                params.text = a
             }
-        }
-
-        RowLayout
-        {
-            Button  {
-                text: "make BaseBand Waveforms"
-                onClicked : { 
-                    if (Julia.checkArrSimulate()==true)
-                    {
-                        Julia.simulate()
-                    }
-                    else{
-                        ldLabel.color= "red"
-                        ldLabel.text="Need 1 Tx, Rx and Target to simulate"
-                    }
-                            }   
-            }
-
-             Button  {
-                text: "calcDistances"
-                onClicked : { 
-                        Julia.outputDistances()
-                            }   
-            }
-
-            Button  {
-                text: "make Post MF Waveforms"
-                onClicked : { 
-                        Julia.SimRangeFinder()
-                            }   
-            }
-        }
-///////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-RowLayout {
-                Layout.fillWidth : true 
-                TableView {
-                    id : waveformTable
-                    Layout.preferredWidth : 400
-                    Layout.maximumWidth :400
-
-                        TableViewColumn {
-                            role: "filename"
-                            title: "File Name"
-                            width: 98
-                        }
-                        model: fileModel
-                    }
-                
-                ColumnLayout
-                {
-                    Label {
-                        id: infoWaveformTable
-                        text: "--"
-                        }
-
-                    Button  {
-                        text: "loadFileNames"
-                        onClicked : { 
-                            Julia.getFileNames()
-                                    }   
-                    }
-
-                    Button  {
-                        text: "Plot"
-                        onClicked : { 
-                            // displayArea.visible = true
-                                Julia.showWaveForm(jdisp,displayArea.width,displayArea.height)
-                                    }   
-                    }
-
-
                 }
-        }// END ROW LAYOUT  Tableview
-///////////////////////////////////////////////////////////////////////////////////////////////
+        Label { id: params ; text: "" }    
 
-            } //END ColumnLayout
 
-        } // END TARGET RECTANGLE
 
-////////////////////////////////////////////////////////////////////////////////////////
+        }//End column Layout
+    } // End rect2
 
- //   _______  ______   _____  _______  _____  _   _   _____       _____  ____   _____   ______ 
- //  |__   __||  ____| / ____||__   __||_   _|| \ | | / ____|     / ____|/ __ \ |  __ \ |  ____|
- //     | |   | |__   | (___     | |     | |  |  \| || |  __     | |    | |  | || |  | || |__   
- //     | |   |  __|   \___ \    | |     | |  | . ` || | |_ |    | |    | |  | || |  | ||  __|  
- //     | |   | |____  ____) |   | |    _| |_ | |\  || |__| |    | |____| |__| || |__| || |____ 
- //     |_|   |______||_____/    |_|   |_____||_| \_| \_____|     \_____|\____/ |_____/ |______|
- 
-////////////////////////////////////////////////////////////////////////////////////////////
 
         // Rectangle {
         //     id: displayArea
@@ -409,4 +343,4 @@ RowLayout {
 
     }// id: rlayout BEGIN
 
-}
+} // end appRoot

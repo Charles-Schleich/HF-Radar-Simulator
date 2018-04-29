@@ -40,7 +40,6 @@ rxArr = AntennaObject[]
 targetArr = AntennaObject[]
 
 # DEFINE FUNCTIONS
-
 function addTarget(xCoord::String , yCoord::String )
     x = parse(Float64,xCoord);
     y = parse(Float64,yCoord);
@@ -52,16 +51,30 @@ function addTarget(xCoord::String , yCoord::String )
     updateModel();
 end
 
+function addRxAntennas(xCoord::String , yCoord::String, number::String)
+    # print(xCoord,"  ",yCoord,"  ",number)
 
-function addRecieveAntenna(xCoord::String , yCoord::String )
-    print(xCoord,"  ",yCoord)
-    
+    qwl = freq_to_wavelen(f0)/2
+
     x = parse(Float64,xCoord)
     y = parse(Float64,yCoord)
-    id = string("RX", length(rxArr))
-    target = AntennaObject(id,"RX",x,y,"orange",[])
-    println("Adding Recieve Antenna ", id," to rxArr")
-    push!(rxArr, target)
+    n = parse(Int,number)
+    global rxArr = AntennaObject[]
+    addSingleTx(x,y)
+    for i in 1:(n)
+        id = string("RX", length(rxArr))
+        x1 = x + (qwl*i)
+        y1 = y 
+        target = AntennaObject(id,"RX",x1,y1,"orange",[])
+        push!(rxArr, target)
+    end
+    updateModel();
+end
+
+function addSingleTx(x,y)
+    global txArr = AntennaObject[]
+    target = AntennaObject("TX","TX",x,y,"green",[])
+    push!(txArr, target)
     updateModel();
 end
 
@@ -201,7 +214,6 @@ end
 function simulate()
     println("one")
     outputRxAntennaWaveforms(rxArr,txArr,targetArr)
-    
 end
 
 function outputRxAntennaWaveforms(rxArray::Array{AntennaObject},txArray::Array{AntennaObject}, targetArray::Array{AntennaObject})
@@ -290,35 +302,31 @@ function showWaveForm(d::JuliaDisplay,w,h)
 end
 
 
- #  _______  ______   _____  _______  _____  _   _   _____       _____  ____   _____   ______ 
- # |__   __||  ____| / ____||__   __||_   _|| \ | | / ____|     / ____|/ __ \ |  __ \ |  ____|
- #    | |   | |__   | (___     | |     | |  |  \| || |  __     | |    | |  | || |  | || |__   
- #    | |   |  __|   \___ \    | |     | |  | . ` || | |_ |    | |    | |  | || |  | ||  __|  
- #    | |   | |____  ____) |   | |    _| |_ | |\  || |__| |    | |____| |__| || |__| || |____ 
- #    |_|   |______||_____/    |_|   |_____||_| \_| \_____|     \_____|\____/ |_____/ |______|
-                                                                                            
+ #  _____  _   _  _____  _______ 
+ # |_   _|| \ | ||_   _||__   __|
+ #   | |  |  \| |  | |     | |   
+ #   | |  | . ` |  | |     | |   
+ #  _| |_ | |\  | _| |_    | |   
+ # |_____||_| \_||_____|   |_|   
+                            
+function initParams(cf,bw,sr)
+    cf,bw,sr = parse(Int,cf),parse(Int,bw),parse(Int,sr)
+    vt=initializeSim(cf,bw,sr);
+    return("Params Initialized")
+end
 
-# function findTarget()
+function loadDefaults() 
+    vt = defaultSimParams();
+    return("Success")
+end
 
-#############################################################################################################
 
+############################################################################################################
 # Program Begins 
 # Program Begins 
 # Program Begins
 
-# tx1 = AntennaObject("TX0","TX", 50,50,"green")
-# push!(txArr, tx1)
-
-# rx1 = AntennaObject("RX0","RX", 200,100,"orange")
-# push!(rxArr,rx1)
-# #                      id  , typ ,  x  ,  y  ,colour
-# tar1 = AntennaObject("TAR0","TAR", 200 , 200 ,"blue")
-# tar2 = AntennaObject("TAR1","TAR", 250 , 200 ,"blue")
-# push!(targetArr,tar1 )
-# push!(targetArr,tar2 )
-
-# dt = CSV.read("objects.csv",types=[String, String, Float64,Float64,String])
-include("hfSim_radar.jl")
+include("hfSim_radar.jl");
 
 files = fileName[]
 fileModel= ListModel(files)
@@ -327,7 +335,8 @@ allElem = AntennaObject[]
 allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 
-@qmlfunction targetExists addTarget outputDistances addRecieveAntenna getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder
+@qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams
+# @qmlfunction loadDefaults initParams
 @qmlapp "radar.qml" startModel fileModel
 exec()
 
