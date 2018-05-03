@@ -4,6 +4,10 @@ rect(x)=(1.0*(abs.(x).<=0.5)); # rect Function
 freq_to_wavelen(f) = (299792458/f)
 myWindow(x)= rect(x).*cos.(x*pi).*cos.(x*pi) 
 
+# Triangle Calculations.
+calcSide(s1,s2,a)= ( (s1^2+s2^2)-2*s1*s2*cosd(a) )^0.5
+calcAngle(opposite,adj1,adj2)= acosd((opposite^2-adj1^2-adj2^2)/(-2*adj2*adj1))
+
 
 function initializeSim(centreF, bandW, sampleRate)
 
@@ -257,18 +261,6 @@ function fromDistCalc(dist1,dist2)
     calculateIncommingAngle(sigA_bb,sigB_bb)
 end
 
-
-###########################################################
-
-
-function rangeProfileFinder(signalArray)
-    numSignals = length(signalArray)
-    
-
-end
-
-###########################################################
-
 function meeting1()
     wf = waveformAtDistance(150E3)
     figure("")
@@ -316,5 +308,43 @@ function meeting2()
     # dist1 = 99973.48701226292 + 100E3
     # dist2 = 99973.48701226292 + 100026.52001898746
     # fromDistCalc(dist1,dist2)
+end
+
+
+function rangeProfileFinder(waveMatrix)
+    arrlength = length(waveMatrix[1])
+    N_antennas = length(waveMatrix)
+    endTime = last(t)
+    numTSamples = length(t)
+
+
+    for i in 1:r_max  # Range 
+        for j in 0:120 # Theta
+            tref = i/c;  # Calc Every Time.            
+            vfoc = 0;
+
+            for n in 1:N_antennas
+                xoffRef = n * 2 #DIST BETWEEN ANTENNAS
+
+                td = calctimeDelay(i, j, )
+
+                tindex= td / tmax
+
+                indexLocation = round(Int,(tindex/endTime)*(length(t)))
+                
+
+                vfoc = vfoc  + waveMatrix[n,]*exp(im*2*pi*f0(td-tref))
+            end
+
+        end
+    end
+end
+
+calctimeDelay(Range, ang, xoffRef) = (calcSide(Range, xoffRef,ang))/c
+
+function gen6AntennaData()
 
 end
+
+# a= [[1,2,3],[4,5,6],[7,8,9]]
+# append!(c,[b])

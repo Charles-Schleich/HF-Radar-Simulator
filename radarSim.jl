@@ -1,4 +1,9 @@
 
+# Pkg.add("CSV")
+# Pkg.add("PyPlot")
+# Pkg.add("QML")
+
+
 using CSV
 using QML
 # using GR
