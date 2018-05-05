@@ -219,6 +219,26 @@ function getElemNumber(objType::String)
     end
 end
 
+
+function calcBlind(pulseT)
+    pt = parse(Int,pulseT)/(10^6)
+    blindR = round(((299792458*pt)/2)/1000,3)
+    blindRStr = string("Blind Range: ", blindR, "km")
+
+    return(blindRStr)
+end
+
+function calcSpacing(centerFreq)
+    cf = parse(Int,centerFreq)
+    antennaSpacing = round((299792458/cf)/2,3)
+
+    antennaSpacingStr = string("Antenna Spacing: ", antennaSpacing, "m")
+
+    return(antennaSpacingStr)
+end
+
+
+
 #   _____  _                    _         _    _               
 #  / ____|(_)                  | |       | |  (_)              
 # | (___   _  _ __ ___   _   _ | |  __ _ | |_  _   ___   _ ___  
@@ -356,7 +376,7 @@ allElem = AntennaObject[]
 allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 
-@qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets 
+@qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing
 # @qmlfunction loadDefaults initParams
 @qmlapp "radar.qml" startModel fileModel
 exec()

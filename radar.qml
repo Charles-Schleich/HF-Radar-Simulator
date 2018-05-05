@@ -55,7 +55,8 @@ ApplicationWindow {
             color : "white"
             border.width : 1
             border.color :  "light grey"
-            height : appRoot.height
+            // height : appRoot.height 
+            height: 400
             width : 320
             
             ColumnLayout
@@ -72,7 +73,7 @@ ApplicationWindow {
                 TextField {
                     id:centreFreq
                     placeholderText: qsTr("i.e. 400000Hz")
-                    validator: IntValidator { bottom: 0; top: 4000000;}
+                    validator: IntValidator { bottom: 0; top: 30000000;}
                 }
                 Label { id:cfStar; color:"red"; text: "" }
             }
@@ -82,7 +83,7 @@ ApplicationWindow {
                 TextField {
                     id:bandWidth
                     placeholderText: qsTr("i.e. 400000Hz")
-                    validator: IntValidator { bottom: 0; top: 4000000;}
+                    validator: IntValidator { bottom: 0; top: 30000000;}
                 }
                  Label { id:bwStar; color:"red"; text: "" }
             }
@@ -187,6 +188,12 @@ ApplicationWindow {
                     // ACCEPTED
                     if (cfCheck==true && bWCheck==true && sFCheck==true && nACheck==true && rXCheck==true && rYCheck==true && pTCheck==true) {
                         
+
+                        var br = Julia.calcBlind(pulseT.text);
+                        var antSpe = Julia.calcSpacing(centreFreq.text);
+                        blindRange.text = br
+                        antennaspacing.text = antSpe
+
                         var a = Julia.initParams(centreFreq.text,bandWidth.text,sampleR.text,pulseT.text)
                         var b = Julia.addRxAntennas(rxAntennaX.text,rxAntennaY.text,noAntenna.text)
 
@@ -204,7 +211,7 @@ ApplicationWindow {
                 Label { id: infoSimParams; text: "" }         
             }
 
-                    Button {
+        Button {
             text: "Load Default Parameters"
             onClicked : {
                 var a = Julia.loadDefaults()
@@ -225,13 +232,21 @@ ApplicationWindow {
                 ryStar.text=""
                 ptStar.text=""
 
+                var br = Julia.calcBlind(pulseT.text);
+                var antSpe = Julia.calcSpacing(centreFreq.text);
+                blindRange.text = br
+                antennaspacing.text = antSpe
+
                 var a = Julia.initParams(centreFreq.text,bandWidth.text,sampleR.text,pulseT.text)
                 var b = Julia.addRxAntennas(rxAntennaX.text,rxAntennaY.text,noAntenna.text)
 
                 infoSimParams.text = a
                 infoSimParams.color = "Green"
                         }
-                }
+            }
+
+            Label { id: blindRange; text: "" }         
+            Label { id: antennaspacing; text: "" }         
 
             } //End ColumnLayout
 
@@ -242,8 +257,7 @@ ApplicationWindow {
     Rectangle {
         id: rect12
         color : "white"
-        height : 0
-        // height : appRoot.height/2
+        height : 200
         width : 320
         }
     } // end row1
