@@ -1,8 +1,6 @@
-
-# Pkg.add("CSV")
-# Pkg.add("PyPlot")
-# Pkg.add("QML")
-
+#  HF Surface wave simulator
+#  Charles Schleich, SCHCHA027
+#  University of Capetown undergraduate Thesis 2018
 
 using CSV
 using QML
@@ -44,7 +42,15 @@ txArr = AntennaObject[]
 rxArr = AntennaObject[]
 targetArr = AntennaObject[]
 
-# DEFINE FUNCTIONS
+ #   ____   _      _              _        
+ #  / __ \ | |    (_)            | |       
+ # | |  | || |__   _   ___   ___ | |_  ___ 
+ # | |  | || '_ \ | | / _ \ / __|| __|/ __|
+ # | |__| || |_) || ||  __/| (__ | |_ \__ \
+ #  \____/ |_.__/ | | \___| \___| \__||___/
+ #               _/ |                      
+ #              |__/                       
+
 function addTarget(xCoord::String , yCoord::String )
     x = parse(Float64,xCoord);
     y = parse(Float64,yCoord);
@@ -57,10 +63,7 @@ function addTarget(xCoord::String , yCoord::String )
 end
 
 function addRxAntennas(xCoord::String , yCoord::String, number::String)
-    # print(xCoord,"  ",yCoord,"  ",number)
-
     qwl = freq_to_wavelen(f0)/2
-
     x = parse(Float64,xCoord)
     y = parse(Float64,yCoord)
     n = parse(Int,number)
@@ -97,9 +100,26 @@ function targetExists(xCoord::String ,yCoord::String)
     return found
 end
 
-# READ IN CSV
-# READ IN CSV
-# READ IN CSV
+function makeRandomTargets()
+    
+    global txArr = AntennaObject[]
+    for i in 1:10
+        x=rand(0:200000)
+        y=rand(40000:200000)
+        id = string("TAR",length(txArr)) 
+        target = AntennaObject(id,"TAR",x,y,"green",[])
+        push!(txArr, target)
+    end
+    updateModel();
+end
+
+#   _____   _____ __      __
+#  / ____| / ____|\ \    / /
+# | |     | (___   \ \  / / 
+# | |      \___ \   \ \/ /  
+# | |____  ____) |   \  /   
+#  \_____||_____/     \/
+
 function readInCSV(fileName::String)
     # emptying Arrays
     emptyArrays()
@@ -149,7 +169,6 @@ function appendModel()
     tempModel= ListModel(allElem)
     return tempModel
 end
-
 
 function updateModel()
     allElem = AntennaObject[]
@@ -248,7 +267,6 @@ function SimRangeFinder()
     makePostMFWaveforms(rxArr,txArr,targetArr)
 end
 
-
 function makePostMFWaveforms(rxArray::Array{AntennaObject},txArray::Array{AntennaObject}, targetArray::Array{AntennaObject})
     transmittAntenna=txArray[1]
     dispWf=zeros(t)
@@ -306,7 +324,6 @@ function showWaveForm(d::JuliaDisplay,w,h)
     return
 end
 
-
  #  _____  _   _  _____  _______ 
  # |_   _|| \ | ||_   _||__   __|
  #   | |  |  \| |  | |     | |   
@@ -314,9 +331,9 @@ end
  #  _| |_ | |\  | _| |_    | |   
  # |_____||_| \_||_____|   |_|   
                             
-function initParams(cf,bw,sr)
-    cf,bw,sr = parse(Int,cf),parse(Int,bw),parse(Int,sr)
-    vt=initializeSim(cf,bw,sr);
+function initParams(cf,bw,sr,pt)
+    cf,bw,sr,pt = parse(Int,cf),parse(Int,bw),parse(Int,sr),parse(Int,pt)
+    vt=initializeSim(cf,bw,sr,pt);
     return("Params Initialized")
 end
 
@@ -324,7 +341,6 @@ function loadDefaults()
     vt = defaultSimParams();
     return("Success")
 end
-
 
 ############################################################################################################
 # Program Begins 
@@ -340,13 +356,10 @@ allElem = AntennaObject[]
 allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 
-@qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams
+@qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets 
 # @qmlfunction loadDefaults initParams
 @qmlapp "radar.qml" startModel fileModel
 exec()
-
-
-
 
 # tar0 = readdlm("waveForms/TAR0.txt")
 # tar1 = readdlm("waveForms/TAR1.txt")

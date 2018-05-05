@@ -55,7 +55,7 @@ ApplicationWindow {
             color : "white"
             border.width : 1
             border.color :  "light grey"
-            height : appRoot.height/2
+            height : appRoot.height
             width : 320
             
             ColumnLayout
@@ -88,15 +88,23 @@ ApplicationWindow {
             }
 
             RowLayout {
-
-                // Label { text: "Sample Frequency (fs):   " }
                 Label { text: "Sample rate (fs):                " }
                 TextField {
                     id: sampleR
-                    placeholderText: qsTr("i.e. 100000")
-                    validator: IntValidator { bottom: 0; top: 200000;}
+                    placeholderText: qsTr("i.e. 100000 (/s)")
+                    validator: IntValidator { bottom: 0; top: 125000000;}
                 }
                  Label { id:sfStar; color:"red"; text: "" }
+            }
+
+            RowLayout {
+                Label { text: "Pulse Time (T) µs :             " }
+                TextField {
+                    id: pulseT
+                    placeholderText: qsTr("i.e. 200 (µs)  ")
+                    validator: IntValidator { bottom: 0; top: 670;}
+                }
+                 Label { id:ptStar; color:"red"; text: "" }
             }
             
             RowLayout {
@@ -108,7 +116,7 @@ ApplicationWindow {
                 }
                  Label { id:nAStar; color:"red"; text: "" }
             }
-            Label {text: ""  }
+            Label { id: distAntennas ; text: ""; color:"green" }
 /////Simulation Paramaters
 
 /////RECIEVE ANTENNAS
@@ -148,6 +156,7 @@ ApplicationWindow {
                     var cfCheck = false
                     var bWCheck = false
                     var sFCheck = false
+                    var pTCheck = false
                     var nACheck = false
                     var rXCheck = false
                     var rYCheck = false
@@ -162,8 +171,11 @@ ApplicationWindow {
                     if (sampleR.text==""){sfStar.text="*"}
                     else{sfStar.text=""; sFCheck=true;}
                     
+                    if (pulseT.text==""){ptStar.text="*"}
+                    else{ptStar.text=""; pTCheck=true;}
+
                     if (noAntenna.text==""){nAStar.text="*"}
-                    else{nAStar.text=""; nACheck=true;}
+                    else{nAStar.text=""; nACheck=true;}                    
 
                     if (rxAntennaX.text==""){rxStar.text="*"}
                     else{rxStar.text=""; rXCheck=true;}
@@ -171,10 +183,11 @@ ApplicationWindow {
                     if (rxAntennaY.text==""){ryStar.text="*"}
                     else{ryStar.text=""; rYCheck=true;}
                     
+                    
                     // ACCEPTED
-                    if (cfCheck==true && bWCheck==true && sFCheck==true && nACheck==true && rXCheck==true && rYCheck==true) {
+                    if (cfCheck==true && bWCheck==true && sFCheck==true && nACheck==true && rXCheck==true && rYCheck==true && pTCheck==true) {
                         
-                        var a = Julia.initParams(centreFreq.text,bandWidth.text,sampleR.text)
+                        var a = Julia.initParams(centreFreq.text,bandWidth.text,sampleR.text,pulseT.text)
                         var b = Julia.addRxAntennas(rxAntennaX.text,rxAntennaY.text,noAntenna.text)
 
                         infoSimParams.text = a
@@ -191,20 +204,50 @@ ApplicationWindow {
                 Label { id: infoSimParams; text: "" }         
             }
 
-               
+                    Button {
+            text: "Load Default Parameters"
+            onClicked : {
+                var a = Julia.loadDefaults()
+                infoSimParams.text = a
+            // # Variables
+                centreFreq.text = 4000000
+                bandWidth.text  = 4000000
+                sampleR.text    = 30000000
+                pulseT.text     = 10
+                noAntenna.text  = 6
+                rxAntennaX.text = 100000
+                rxAntennaY.text = 10000
+                cfStar.text=""
+                bwStar.text=""
+                sfStar.text=""
+                nAStar.text=""
+                rxStar.text=""
+                ryStar.text=""
+                ptStar.text=""
 
-/////RECIEVE ANTENNAS
+                var a = Julia.initParams(centreFreq.text,bandWidth.text,sampleR.text,pulseT.text)
+                var b = Julia.addRxAntennas(rxAntennaX.text,rxAntennaY.text,noAntenna.text)
+
+                infoSimParams.text = a
+                infoSimParams.color = "Green"
+                        }
+                }
 
             } //End ColumnLayout
+
         } // End rect1
+
+
 
     Rectangle {
         id: rect12
         color : "white"
-        height : appRoot.height/2
+        height : 0
+        // height : appRoot.height/2
         width : 320
         }
     } // end row1
+
 
     Rectangle {
         id: rect2
@@ -272,13 +315,18 @@ ApplicationWindow {
                             infoTar.text = "Empty Params"
                             infoTar.color = "red"
                         }
-
-
-
                     }
                 }
                     Label { id: infoTar; text: "" }         
             }// End Add Target 
+
+             Button {
+                    text: "Add Target"
+                    onClicked : { 
+                        Julia.makeRandomTargets()
+                    }
+                }
+
         Label { text: "" }   
 
 
@@ -311,18 +359,9 @@ ApplicationWindow {
                     }
 
 
-        Button {
-            text: "Load Default Parameters"
-            onClicked : {var a = Julia.loadDefaults()
-                params.text = a
-            }
-                }
-        Label { id: params ; text: "" }    
-
-
-
         }//End column Layout
     } // End rect2
+
 
 
         // Rectangle {

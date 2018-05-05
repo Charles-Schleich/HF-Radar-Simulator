@@ -9,7 +9,7 @@ calcSide(s1,s2,a)= ( (s1^2+s2^2)-2*s1*s2*cosd(a) )^0.5
 calcAngle(opposite,adj1,adj2)= acosd((opposite^2-adj1^2-adj2^2)/(-2*adj2*adj1))
 
 
-function initializeSim(centreF, bandW, sampleRate)
+function initializeSim(centreF, bandW, sampleRate,pulseT)
 
     # Constants 
     global c = 299792458;      # speed of wave through Medium (here its speed of light in air)
@@ -18,20 +18,22 @@ function initializeSim(centreF, bandW, sampleRate)
     global t_max = 2*r_max/c;  # Time delay to max range
 
     # Variables
-
     global f0 = centreF; # Center frequency 
     global B  = bandW; # Chirp bandwidth
     global fs = sampleRate; # This is the sample rate required for 30MHz.
+
 
     # Dependents
     global dt = 1/fs;  # This is the sample spacing
     global t = 0:dt:t_max; # define a time vector containing the time values of the samples
     global r = (c*t/2)/1000 ;  # range vector containing the range values of the samples . 
-                        # divided by 1000 for km
+    # divided by 1000 for km
 
-    global  T = (2E-4); # Chirp pulse length
+    # global  T = (2E-4); # Chirp pulse length
+    # global  T = (5E-5); # Chirp pulse length
+    global  T = pulseT/(10^6)
+    
     global  K = B/T;    # Chirp rate
-
     global td = 0.6*T; # Chirp delay
 
     global v_tx = cos.( 2*pi*(f0*(t-td) + 0.5*K*(t-td).^2) ).*rect((t-td)/T);
@@ -58,7 +60,10 @@ function defaultSimParams()
                         # divided by 1000 for km
 
     #Creating Initial Pulse
-    global T = (2E-4); # Chirp pulse length
+    # global T = (2E-4); # Chirp pulse length
+    global  T = (1E-5); # Chirp pulse length
+
+
     global K = B/T;    # Chirp rate
     global td = 0.6*T; # Chirp delay
     global v_tx = cos.( 2*pi*(f0*(t-td) + 0.5*K*(t-td).^2) ).*rect((t-td)/T);
@@ -325,7 +330,7 @@ function rangeProfileFinder(waveMatrix)
 
             for n in 1:N_antennas
                 xoffRef = n * 2 #DIST BETWEEN ANTENNAS
-
+                # WORK ON THIS PLOX
                 td = calctimeDelay(i, j, )
 
                 tindex= td / tmax
