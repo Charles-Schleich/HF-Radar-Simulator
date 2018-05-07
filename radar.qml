@@ -306,22 +306,32 @@ ApplicationWindow {
                         model: recieveModel
                     }
      // Label { id: rxRow; text: rxTable.currentRow ;}
+     ColumnLayout{
 
      Button {
                 text: "View Waveform"
                 onClicked : {
-                    text=rxTable.currentRow
-                    
+                    Julia.showRXWaveform(rxTable.currentRow)
                     }
                 }
 
+     Button {
+                text: "Add to plot "
+                onClicked : {
+                    Julia.addToPlotRXWaveform(rxTable.currentRow)
+                    }
+                }
+
+     Button {
+            text: "Close view "
+            onClicked : {
+                Julia.clearplot()
+                }
+            }
+                        
+    }
     // openordersModel
         }
-
-
-
-
-
 
         }// EnD COL LAYOUT
 
@@ -410,7 +420,7 @@ ApplicationWindow {
                 }
 
         Label { text: "" }   
-
+        Label { text: "Scenario objects";  font.underline : true }   
 
         TableView {
                     id : tbViewTar
@@ -439,6 +449,20 @@ ApplicationWindow {
                         }
                         model: startModel
                     }
+
+        Button {
+                text: "FINISH ME MAKE SINGLE TARGET FINDER"
+                onClicked : { 
+                }
+        }
+
+        Button {
+                text: "FINISH ME MAKE RANGE FINDER"
+                onClicked : { 
+                }
+        }
+
+
 
         }//End column Layout
     } // End rect2

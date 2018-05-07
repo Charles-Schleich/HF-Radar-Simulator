@@ -241,8 +241,6 @@ function calcSpacing(centerFreq)
     return(antennaSpacingStr)
 end
 
-
-
 #   _____  _                    _         _    _               
 #  / ____|(_)                  | |       | |  (_)              
 # | (___   _  _ __ ___   _   _ | |  __ _ | |_  _   ___   _ ___  
@@ -339,6 +337,32 @@ function showWaveForm(d::JuliaDisplay,w,h)
     return
 end
 
+
+#  VIEW WAVEFORMS
+
+function showRXWaveform(rxNum)
+    close("all")
+    print(rxNum)
+    figure("Recieve Antenna Waveform")
+    title_ = string("Recieve Antenna", rxNum+1,"Wavform")
+    title(title_)
+    xlabel("Range")
+    ylabel("Amplitude")
+    plot(r,rxArr[rxNum+1].wf)
+end
+
+function addToPlotRXWaveform(rxNum)
+    plot(r,rxArr[rxNum+1].wf)
+end
+
+
+function clearplot()
+    close("all")
+end
+
+
+
+
  #  _____  _   _  _____  _______ 
  # |_   _|| \ | ||_   _||__   __|
  #   | |  |  \| |  | |     | |   
@@ -372,7 +396,7 @@ allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 recieveModel = ListModel(rxArr)
 
-@qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing
+@qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing showRXWaveform addToPlotRXWaveform clearplot
 # @qmlfunction loadDefaults initParams
 @qmlapp "radar.qml" startModel fileModel recieveModel
 exec()
