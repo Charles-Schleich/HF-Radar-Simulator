@@ -259,8 +259,76 @@ ApplicationWindow {
         color : "white"
         height : 200
         width : 320
+
+        ColumnLayout{
+
+            RowLayout{
+                Button {
+                text: "Simulate Waveforms"
+                onClicked : {
+                    if(Julia.checkArrSimulate()==false){
+                    checkSim.color = "red";
+                    checkSim.text = "missing RX/TX/Target"; 
+                    }
+                    else
+                    {
+                    checkSim.color = "blue";
+                    checkSim.text = "Simulating...";
+                    Julia.simulate()
+                    checkSim.color = "green";
+                    checkSim.text = "Simulated";
+                    }
+
+                }
+
+                }
+                Label { id: checkSim; text: "" ;}
+                
+            }
+        RowLayout{
+        TableView {
+                    id : rxTable
+                    Layout.preferredWidth :200
+                    Layout.maximumWidth : 200
+
+                        TableViewColumn {
+                            role: "_id"
+                            title: "id"
+                            width: 50
+                        }
+
+                        TableViewColumn {
+                            role: "wfCreated"
+                            title: "wfCreated"
+                            width: 100
+                        }
+
+                        model: recieveModel
+                    }
+     // Label { id: rxRow; text: rxTable.currentRow ;}
+
+     Button {
+                text: "View Waveform"
+                onClicked : {
+                    text=rxTable.currentRow
+                    
+                    }
+                }
+
+    // openordersModel
         }
+
+
+
+
+
+
+        }// EnD COL LAYOUT
+
+        } //end rect 12 (bottom rect)
+
     } // end row1
+
 
 
     Rectangle {
@@ -335,7 +403,7 @@ ApplicationWindow {
             }// End Add Target 
 
              Button {
-                    text: "Add Target"
+                    text: "Generate Random Targets"
                     onClicked : { 
                         Julia.makeRandomTargets()
                     }
@@ -371,7 +439,6 @@ ApplicationWindow {
                         }
                         model: startModel
                     }
-
 
         }//End column Layout
     } // End rect2

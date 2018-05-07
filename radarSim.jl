@@ -16,6 +16,7 @@ type AntennaObject
     ey::Float64
     colour::String
     wf::Array{Complex{Float64},1}
+    wfCreated::Bool
 end
 
 type fileName 
@@ -56,7 +57,7 @@ function addTarget(xCoord::String , yCoord::String )
     y = parse(Float64,yCoord);
     
     id = string("TAR", length(targetArr));
-    target = AntennaObject(id,"TAR",x,y,"blue",[]);
+    target = AntennaObject(id,"TAR",x,y,"blue",[],false);
     println("Adding Target ", id, "to targetArr");
     push!(targetArr, target);
     updateModel();
@@ -73,7 +74,7 @@ function addRxAntennas(xCoord::String , yCoord::String, number::String)
         id = string("RX", length(rxArr))
         x1 = x + (qwl*i)
         y1 = y 
-        target = AntennaObject(id,"RX",x1,y1,"orange",[])
+        target = AntennaObject(id,"RX",x1,y1,"orange",[],false)
         push!(rxArr, target)
     end
     updateModel();
@@ -81,7 +82,7 @@ end
 
 function addSingleTx(x,y)
     global txArr = AntennaObject[]
-    target = AntennaObject("TX","TX",x,y,"green",[])
+    target = AntennaObject("TX","TX",x,y,"green",[],false)
     push!(txArr, target)
     updateModel();
 end
@@ -101,14 +102,13 @@ function targetExists(xCoord::String ,yCoord::String)
 end
 
 function makeRandomTargets()
-    
-    global txArr = AntennaObject[]
+    global targetArr = AntennaObject[]
     for i in 1:10
         x=rand(0:200000)
         y=rand(40000:200000)
-        id = string("TAR",length(txArr)) 
-        target = AntennaObject(id,"TAR",x,y,"green",[])
-        push!(txArr, target)
+        id = string("TAR",length(targetArr)) 
+        target = AntennaObject(id,"TAR",x,y,"green",[],false)
+        push!(targetArr, target)
     end
     updateModel();
 end
@@ -130,7 +130,7 @@ function readInCSV(fileName::String)
     for i in 1:numRows 
         id,typ,ex,ey,colour = dt[1][i] , dt[2][i] , dt[3][i] , dt[4][i] , dt[5][i]
         
-        tempTarget = AntennaObject(id,typ,ex,ey,colour,[])
+        tempTarget = AntennaObject(id,typ,ex,ey,colour,[],false)
 
         if typ =="TX"
             push!(txArr,tempTarget)
@@ -175,6 +175,10 @@ function updateModel()
     allElem = [txArr; targetArr;rxArr]
     objectModel= ListModel(allElem)
     @qmlset qmlcontext().startModel = objectModel
+
+    rxModel= ListModel(rxArr)
+    @qmlset qmlcontext().recieveModel = rxModel
+
 end
 
 
@@ -247,7 +251,6 @@ end
 # |_____/ |_||_| |_| |_| \__,_||_| \__,_| \__||_| \___/ |_| |_|
 
 function checkArrSimulate()
-
     if(length(rxArr)>0 && length(txArr)>0 && length(targetArr)>0)
         return true
     else
@@ -261,7 +264,7 @@ function simulate()
 end
 
 function outputRxAntennaWaveforms(rxArray::Array{AntennaObject},txArray::Array{AntennaObject}, targetArray::Array{AntennaObject})
-
+    
     transmittAntenna=txArray[1]
     for i in (rxArray)
         summedWaveform = zeros(t)
@@ -269,16 +272,13 @@ function outputRxAntennaWaveforms(rxArray::Array{AntennaObject},txArray::Array{A
             txToTarg = calcDist(transmittAntenna,j);
             rxToTarg = calcDist(i,j);
             # println(txToTarg+rxToTarg)
-            waveform = waveformAtDistance( txToTarg + rxToTarg);
+            waveform = wavRaw( txToTarg , rxToTarg);
             summedWaveform=summedWaveform+waveform
         end
-        name = string("waveForms/",i._id,".wf")
-        writedlm(name, summedWaveform)
-        figure();
-        title("waveforms")
-        ylabel("Amplitude")
-        plot(r,summedWaveform)
+        i.wf = summedWaveform
+        i.wfCreated = true
     end
+     updateModel();
 end
 # SAVE ABS AND ANGLE VALUES IF THAT HELPS MAYBE YES ?
 
@@ -300,13 +300,8 @@ function makePostMFWaveforms(rxArray::Array{AntennaObject},txArray::Array{Antenn
         end
         i.wf = summedWaveform
         dispWf = dispWf+summedWaveform
-        # name = string("waveForms/",i._id,".wf")
-        # writedlm(name, summedWaveform)
     end
-        figure();
-        title("summed WF")
-        ylabel("Amplitude")
-        plot(r,dispWf)
+    updateModel();
 end
 # SAVE ABS AND ANGLE VALUES IF THAT HELPS MAYBE YES ?
 
@@ -375,10 +370,11 @@ fileModel= ListModel(files)
 allElem = AntennaObject[]
 allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
+recieveModel = ListModel(rxArr)
 
 @qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing
 # @qmlfunction loadDefaults initParams
-@qmlapp "radar.qml" startModel fileModel
+@qmlapp "radar.qml" startModel fileModel recieveModel
 exec()
 
 # tar0 = readdlm("waveForms/TAR0.txt")

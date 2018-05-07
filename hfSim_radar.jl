@@ -5,9 +5,20 @@ freq_to_wavelen(f) = (299792458/f)
 myWindow(x)= rect(x).*cos.(x*pi).*cos.(x*pi) 
 
 # Triangle Calculations.
+# calc 3rd side given s1 s2 and angle
 calcSide(s1,s2,a)= ( (s1^2+s2^2)-2*s1*s2*cosd(a) )^0.5
+
+#calc angle given 3 sides.
 calcAngle(opposite,adj1,adj2)= acosd((opposite^2-adj1^2-adj2^2)/(-2*adj2*adj1))
 
+
+ #  _____  _   _  _____  _______ 
+ # |_   _|| \ | ||_   _||__   __|
+ #   | |  |  \| |  | |     | |   
+ #   | |  | . ` |  | |     | |   
+ #  _| |_ | |\  | _| |_    | |   
+ # |_____||_| \_||_____|   |_|   
+                              
 
 function initializeSim(centreF, bandW, sampleRate,pulseT)
 
@@ -32,7 +43,8 @@ function initializeSim(centreF, bandW, sampleRate,pulseT)
     # global  T = (2E-4); # Chirp pulse length
     # global  T = (5E-5); # Chirp pulse length
     global  T = pulseT/(10^6)
-    
+    global  r_Blind =  (T*c)/2
+
     global  K = B/T;    # Chirp rate
     global td = 0.6*T; # Chirp delay
 
@@ -45,7 +57,7 @@ function defaultSimParams()
     # Constants 
     global c = 299792458;      # speed of wave through Medium (here its speed of light in air)
     global sf = 2 ;            # distance Scaling Factor
-    global r_max = 300E3;      # Maximum range to which to simulate in (meters)
+    global r_max = 200E3;      # Maximum range to which to simulate in (meters)
     global t_max = 2*r_max/c;  # Time delay to max range
 
     # Variables
@@ -58,21 +70,32 @@ function defaultSimParams()
     global t = 0:dt:t_max; # define a time vector containing the time values of the samples
     global r = (c*t/2)/1000 ;  # range vector containing the range values of the samples . 
                         # divided by 1000 for km
-
+    
     #Creating Initial Pulse
     # global T = (2E-4); # Chirp pulse length
     global  T = (1E-5); # Chirp pulse length
 
+    global  r_Blind =  (T*c)/2
 
     global K = B/T;    # Chirp rate
-    global td = 0.6*T; # Chirp delay
+    global td = 0 #0.6*T; # Chirp delay
     global v_tx = cos.( 2*pi*(f0*(t-td) + 0.5*K*(t-td).^2) ).*rect((t-td)/T);
 
 end
 
 
+ # __          __  __      __ ______      _____  _____   ______         _______  _____  ____   _   _ 
+ # \ \        / //\\ \    / /|  ____|    / ____||  __ \ |  ____|    /\ |__   __||_   _|/ __ \ | \ | |
+ #  \ \  /\  / //  \\ \  / / | |__      | |     | |__) || |__      /  \   | |     | | | |  | ||  \| |
+ #   \ \/  \/ // /\ \\ \/ /  |  __|     | |     |  _  / |  __|    / /\ \  | |     | | | |  | || . ` |
+ #    \  /\  // ____ \\  /   | |____    | |____ | | \ \ | |____  / ____ \ | |    _| |_| |__| || |\  |
+ #     \/  \//_/    \_\\/    |______|    \_____||_|  \_\|______|/_/    \_\|_|   |_____|\____/ |_| \_|
 
-function waveformAtDistance(distance) # Distance is in meters
+
+
+# This function creates a waveform that gets processed through a matched  filter
+# then gets turned into an analytic signal and pushed down to base band.
+function waveformAtDistance(distance) 
 
     R1 = distance
     td1 = R1/c;# Two way delay to target.
@@ -92,11 +115,6 @@ function waveformAtDistance(distance) # Distance is in meters
     H = conj(V_TX);
     V_MF  = H.*V_RX;
 
-    # Window function ????
-    # V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
-    # v_mf  = ifft(V_MF)
-    # v_mf_window= ifft(V_MF_Window)
-
     # Analytic Signal 
     V_ANALYTIC = 2*V_MF 
     N = length(V_MF);
@@ -105,13 +123,11 @@ function waveformAtDistance(distance) # Distance is in meters
 
     # BaseBanded
     v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
-
     return(v_baseband)
 end
 
 
 function wavAtDist_AfterMF(distance) # Distance is in meters
-
     R1 = floor(Int,distance)
     td1 = R1/c;# R is the total delay to the target
     A1 = 1/R1^sf;
@@ -135,9 +151,75 @@ function wavAtDist_AfterMF(distance) # Distance is in meters
     V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
     v_mf  = ifft(V_MF)
     v_mf_window= ifft(V_MF_Window)
+    return(v_mf_window)
+end
 
+# This is made to create chirp waveforms similar to what would be recieved by 
+# an RX antenna
+function wavRaw(tx_Targ, rx_Targ) 
+    R1 = tx_Targ+rx_Targ
+
+    if (tx_Targ > r_Blind) && (rx_Targ > r_Blind) 
+        A1 = 1/R1^sf;
+    else  
+        A1=0;
+    end
+    
+    td1 = R1/c;# R is the total delay to the target
+
+    #Chirp Signal
+    v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T);
+    return(v_rx)
+end
+
+
+function matchedFilter(v_rx) # Distance is in meters
+
+    V_TX= (fft(v_tx));
+    V_RX= (fft(v_rx));
+    # Frequency Axes
+    N=length(t);
+    f_axes = ((fs*2)*(0:N-1)/N);# frequency axis
+
+    # Matched Filtering
+    H = conj(V_TX);
+    V_MF  = H.*V_RX;
+    v_mf  = ifft(V_MF)
+
+    # Window function
+    # V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
+    # v_mf_window= ifft(V_MF_Window)
 
     return(v_mf_window)
+end
+
+
+
+
+
+# This function was used to test whether there was any numeric Difference
+# between adding the raw waveforms then matched filtering the summation
+# and matched filtering each waveform and adding them post match waveform
+# i.e. Matched_Filter(a + b) vs Matched_Filter(a) +  Matched_Filter(b)
+function testRaw() 
+    a = wavAtDist_AfterMF(150000);
+    b = wavAtDist_AfterMF(175000);
+    b2= wavAtDist_AfterMF(200000);
+    f = a + b + b2
+
+    c = wavRaw(150000);
+    d = wavRaw(175000);
+    d2 = wavRaw(200000);
+    e = matchedFilter(d + c + d2); 
+
+    close("all")
+    plot(r, abs.(e))
+    plot(r, abs.(f))
+    println(f[1])
+    println(e[1])
+    g=f -e 
+    figure()
+    plot((g))
 end
 
 
@@ -201,6 +283,12 @@ end
  #                                                                                   |___/                      |___/          
 
 function calculateIncommingAngle(sigA_bb,sigB_bb)
+
+    # V_ANALYTIC = 2*V_MF 
+    # N = length(V_MF);
+    # V_ANALYTIC[floor(Int,N/2)+1:Int(N)] = 0;
+    # v_analytic = ifft(V_ANALYTIC)
+
     # Separate baseband and angle waveforms 
     scale = r.^sf
     sigA_bb_scaled , sigB_bb_scaled = abs.(sigA_bb.*(scale)),abs.(sigB_bb.*(scale))
@@ -232,7 +320,7 @@ function calculateIncommingAngle(sigA_bb,sigB_bb)
     phasediff = phaseB_rad - phaseA_rad
 
     if (phasediff > (pi))
-        phasediff = phasediff-pi
+        phasediff = phasediff - pi
     end
     # Distance between antennas
     d=37.5;
@@ -265,6 +353,53 @@ function fromDistCalc(dist1,dist2)
     sigB_bb = waveformAtDistance(dist2)
     calculateIncommingAngle(sigA_bb,sigB_bb)
 end
+
+#  _____                                _____               __  _  _        
+# |  __ \                              |  __ \             / _|(_)| |       
+# | |__) | __ _  _ __    __ _   ___    | |__) |_ __  ___  | |_  _ | |  ___  
+# |  _  / / _` || '_ \  / _` | / _ \   |  ___/| '__|/ _ \ |  _|| || | / _ \ 
+# | | \ \| (_| || | | || (_| ||  __/   | |    | |  | (_) || |  | || ||  __/ 
+# |_|  \_\\__,_||_| |_| \__, | \___|   |_|    |_|   \___/ |_|  |_||_| \___| 
+#                        __/ |                                              
+#                       |___/                                               
+
+function rangeProfileFinder(waveMatrix)
+    arrlength = length(waveMatrix[1])
+    N_antennas = length(waveMatrix)
+    endTime = last(t)
+    numTSamples = length(t)
+    distBetwAnennas= (freq_to_wavelen(f0))/2
+
+    for i in 1:r_max  # Range 
+        for j in -60:60 # Theta
+            tref = (i + calcSide(i,distBetwAnennas,j))/c;  # Calc Every Time.            
+            vfoc = 0;
+
+            for n in 1:N_antennas
+                xoffRef = n * distBetwAnennas
+                td = calctimeDelay(i, j, xoffRef) # calculates total time delay
+
+                tindex= td / t_max
+
+                indexLocation = round(Int,(tindex/endTime)*(length(t)))
+
+                vfoc = vfoc  + waveMatrix[n,indexLocation]*exp(im*2*pi*f0(td-tref))
+            end
+
+        end
+    end
+end
+
+calctimeDelay(Range, ang, xoffRef) = (Range + calcSide(Range, xoffRef,ang))/c
+
+
+function gen6AntennaData()
+
+end
+
+# a= [[1,2,3],[4,5,6],[7,8,9]]
+# append!(c,[b])
+
 
 function meeting1()
     wf = waveformAtDistance(150E3)
@@ -313,43 +448,5 @@ function meeting2()
     # dist1 = 99973.48701226292 + 100E3
     # dist2 = 99973.48701226292 + 100026.52001898746
     # fromDistCalc(dist1,dist2)
-end
-
-
-function rangeProfileFinder(waveMatrix)
-    arrlength = length(waveMatrix[1])
-    N_antennas = length(waveMatrix)
-    endTime = last(t)
-    numTSamples = length(t)
-
-
-    for i in 1:r_max  # Range 
-        for j in 0:120 # Theta
-            tref = i/c;  # Calc Every Time.            
-            vfoc = 0;
-
-            for n in 1:N_antennas
-                xoffRef = n * 2 #DIST BETWEEN ANTENNAS
-                # WORK ON THIS PLOX
-                td = calctimeDelay(i, j, )
-
-                tindex= td / tmax
-
-                indexLocation = round(Int,(tindex/endTime)*(length(t)))
-                
-
-                vfoc = vfoc  + waveMatrix[n,]*exp(im*2*pi*f0(td-tref))
-            end
-
-        end
-    end
-end
-
-calctimeDelay(Range, ang, xoffRef) = (calcSide(Range, xoffRef,ang))/c
-
-function gen6AntennaData()
 
 end
-
-# a= [[1,2,3],[4,5,6],[7,8,9]]
-# append!(c,[b])
