@@ -245,8 +245,8 @@ ApplicationWindow {
                         }
             }
 
-            Label { id: blindRange; text: "" }         
-            Label { id: antennaspacing; text: "" }         
+            Label { id: blindRange; text: "Blind Range:" }         
+            Label { id: antennaspacing; text: "Antenna Spacing:" }         
 
             } //End ColumnLayout
 
@@ -298,8 +298,8 @@ ApplicationWindow {
                         }
 
                         TableViewColumn {
-                            role: "wfCreated"
-                            title: "wfCreated"
+                            role: "wfstage"
+                            title: "wfstage"
                             width: 100
                         }
 
@@ -308,19 +308,69 @@ ApplicationWindow {
      // Label { id: rxRow; text: rxTable.currentRow ;}
      ColumnLayout{
 
+    Button {
+                text: "MF Waveform"
+                onClicked : {
+
+                    if(Julia.checkArrSimulate()==false){
+                    checkSim.color = "red";
+                    checkSim.text = "Cannot process: No WF"; 
+                    }
+                    else
+                    {
+                    Julia.matchedFilter()                    
+                    }
+
+                    }
+                }
+
+
      Button {
                 text: "View Waveform"
                 onClicked : {
-                    Julia.showRXWaveform(rxTable.currentRow)
+
+                    if(Julia.checkArrSimulate()==false){
+                    checkSim.color = "red";
+                    checkSim.text = "Cannot Display: No Rx"; 
+                    }
+                    else
+                    {
+                    Julia.showRXWaveform(rxTable.currentRow)                    
+                    }
+
+                    }
+                }
+
+      Button {
+                text: "View Abs WF"
+                onClicked : {
+
+                    if(Julia.checkArrSimulate()==false){
+                    checkSim.color = "red";
+                    checkSim.text = "Cannot Display: No Rx"; 
+                    }
+                    else
+                    {
+                    Julia.showAbsRXWaveform(rxTable.currentRow)                    
+                    }
+
                     }
                 }
 
      Button {
-                text: "Add to plot "
+                text: "View Phase "
                 onClicked : {
-                    Julia.addToPlotRXWaveform(rxTable.currentRow)
+
+                     if(Julia.checkArrSimulate()==false){
+                    checkSim.color = "red";
+                    checkSim.text = "Cannot Display: No Rx"; 
+                    }
+                    else
+                    {
+                    Julia.viewPhase(rxTable.currentRow)
                     }
                 }
+            }
 
      Button {
             text: "Close view "
@@ -451,22 +501,42 @@ ApplicationWindow {
                     }
 
         Button {
-                text: "FINISH ME MAKE SINGLE TARGET FINDER"
+                text: "Find Single Point"
                 onClicked : { 
+                    if(Julia.checkSinglePoint())
+                    {
+
+                    }
+                    else{
+
+                        processInfo.text = "Single Point Target detection requires one target"
+                        processInfo.color = "red"
+
+                    }
+
                 }
         }
 
         Button {
-                text: "FINISH ME MAKE RANGE FINDER"
+                text: "Make range profile"
                 onClicked : { 
+
+                    if(Julia.checkArrSimulate())
+                    {
+                        Julia.processRangeProfile()
+                    }
+                    else{
+                        processInfo.text = "Cant Sim, Missing RX"
+                        processInfo.color = "red"
+
+                    }
+
                 }
         }
 
-
-
-        }//End column Layout
+                    Label { id: processInfo; text: "100" }
+        } //End column Layout
     } // End rect2
-
 
 
         // Rectangle {

@@ -16,7 +16,7 @@ type AntennaObject
     ey::Float64
     colour::String
     wf::Array{Complex{Float64},1}
-    wfCreated::Bool
+    wfstage::String
 end
 
 type fileName 
@@ -57,7 +57,7 @@ function addTarget(xCoord::String , yCoord::String )
     y = parse(Float64,yCoord);
     
     id = string("TAR", length(targetArr));
-    target = AntennaObject(id,"TAR",x,y,"blue",[],false);
+    target = AntennaObject(id,"TAR",x,y,"blue",[],"None");
     println("Adding Target ", id, "to targetArr");
     push!(targetArr, target);
     updateModel();
@@ -74,7 +74,7 @@ function addRxAntennas(xCoord::String , yCoord::String, number::String)
         id = string("RX", length(rxArr))
         x1 = x + (qwl*i)
         y1 = y 
-        target = AntennaObject(id,"RX",x1,y1,"orange",[],false)
+        target = AntennaObject(id,"RX",x1,y1,"orange",[],"None")
         push!(rxArr, target)
     end
     updateModel();
@@ -82,7 +82,7 @@ end
 
 function addSingleTx(x,y)
     global txArr = AntennaObject[]
-    target = AntennaObject("TX","TX",x,y,"green",[],false)
+    target = AntennaObject("TX","TX",x,y,"green",[],"None")
     push!(txArr, target)
     updateModel();
 end
@@ -107,7 +107,7 @@ function makeRandomTargets()
         x=rand(0:200000)
         y=rand(40000:200000)
         id = string("TAR",length(targetArr)) 
-        target = AntennaObject(id,"TAR",x,y,"green",[],false)
+        target = AntennaObject(id,"TAR",x,y,"green",[],"None")
         push!(targetArr, target)
     end
     updateModel();
@@ -130,7 +130,7 @@ function readInCSV(fileName::String)
     for i in 1:numRows 
         id,typ,ex,ey,colour = dt[1][i] , dt[2][i] , dt[3][i] , dt[4][i] , dt[5][i]
         
-        tempTarget = AntennaObject(id,typ,ex,ey,colour,[],false)
+        tempTarget = AntennaObject(id,typ,ex,ey,colour,[],"None")
 
         if typ =="TX"
             push!(txArr,tempTarget)
@@ -164,7 +164,7 @@ end
 
 function appendModel()
     appendarr = AntennaObject[]
-    tar1 = AntennaObject("TAR0","TAR", 100 , 300 ,"blue")
+    tar1 = AntennaObject("TAR0","TAR", 100 , 300 ,"blue",[],"None")
     push!(appendarr ,tar1 )
     tempModel= ListModel(allElem)
     return tempModel
@@ -256,8 +256,8 @@ function checkArrSimulate()
     end
 end
 
+
 function simulate()
-    println("one")
     outputRxAntennaWaveforms(rxArr,txArr,targetArr)
 end
 
@@ -274,7 +274,7 @@ function outputRxAntennaWaveforms(rxArray::Array{AntennaObject},txArray::Array{A
             summedWaveform=summedWaveform+waveform
         end
         i.wf = summedWaveform
-        i.wfCreated = true
+        i.wfstage = "RAW"
     end
      updateModel();
 end
@@ -297,7 +297,7 @@ function makePostMFWaveforms(rxArray::Array{AntennaObject},txArray::Array{Antenn
             summedWaveform=summedWaveform+ abs.(waveform)
         end
         i.wf = summedWaveform
-        dispWf = dispWf+summedWaveform
+        # dispWf = dispWf+summedWaveform
     end
     updateModel();
 end
@@ -348,11 +348,34 @@ function showRXWaveform(rxNum)
     title(title_)
     xlabel("Range")
     ylabel("Amplitude")
-    plot(r,rxArr[rxNum+1].wf)
+    plot(r, rxArr[rxNum+1].wf)
 end
 
 function addToPlotRXWaveform(rxNum)
     plot(r,rxArr[rxNum+1].wf)
+end
+
+
+function showAbsRXWaveform(rxNum)
+    close("all")
+    print(rxNum)
+    figure("Abs of RX")
+    title_ = string("Recieve Antenna", rxNum+1,"Wavform")
+    title(title_)
+    xlabel("Range")
+    ylabel("Amplitude")
+    plot(r, abs.(rxArr[rxNum+1].wf))
+end
+
+function viewPhase(rxNum)
+    close("all")
+    print(rxNum)
+    figure("Phase of RX")
+    title_ = string("Recieve Antenna", rxNum+1,"Wavform")
+    title(title_)
+    xlabel("Range")
+    ylabel("Amplitude")
+    plot(r, angle.(rxArr[rxNum+1].wf))
 end
 
 
@@ -361,8 +384,62 @@ function clearplot()
 end
 
 
+ #   _____  _____   ______  
+ #  / ____||  __ \ |  ____| 
+ # | (___  | |__) || |__    
+ #  \___ \ |  ___/ |  __|   
+ #  ____) || |     | |      
+ # |_____/ |_|     |_|      
 
 
+function checkSinglePoint()
+    if(length(targetArr)==1)
+        return true
+    else
+        return false
+    end
+end
+
+#  _____                          _____            __ _ _      
+# |  __ \                        |  __ \          / _(_) |     
+# | |__) |__ _ _ __   __ _  ___  | |__) | __ ___ | |_ _| | ___ 
+# |  _  // _` | '_ \ / _` |/ _ \ |  ___/ '__/ _ \|  _| | |/ _ \
+# | | \ \ (_| | | | | (_| |  __/ | |   | | | (_) | | | | |  __/
+# |_|  \_\__,_|_| |_|\__, |\___| |_|   |_|  \___/|_| |_|_|\___|
+#                     __/ |                                    
+#                    |___/   
+
+function matchedFilter()
+    if (rxArr[1].wfstage == "RAW")
+        for i in rxArr
+            temp= matchedFilter(i.wf)
+            i.wf= temp
+            i.wfstage = "MF"
+        end
+    end
+    updateModel();
+end
+
+
+function processRangeProfile()
+    # make post window Match filter figure
+    if (rxArr[1].wfstage == "RAW")
+        for i in rxArr
+            temp= matchedFilter(i.wf);
+            i.wf= temp;
+            i.wfstage = "MF";
+        end
+    end
+    # DATA IS IN MF Stage IT NEEDS TO SEND ABSOULTE WAVEFORM 
+    dataMatrix = []
+    for i in rxArr
+        push!(dataMatrix, abs.(i.wf))
+    end
+
+    rpd = rangeProfileFinder(dataMatrix);
+    println("END")
+
+end
  #  _____  _   _  _____  _______ 
  # |_   _|| \ | ||_   _||__   __|
  #   | |  |  \| |  | |     | |   
@@ -396,7 +473,7 @@ allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 recieveModel = ListModel(rxArr)
 
-@qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing showRXWaveform addToPlotRXWaveform clearplot
+@qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing showRXWaveform addToPlotRXWaveform clearplot checkSinglePoint processRangeProfile showAbsRXWaveform matchedFilter viewPhase
 # @qmlfunction loadDefaults initParams
 @qmlapp "radar.qml" startModel fileModel recieveModel
 exec()

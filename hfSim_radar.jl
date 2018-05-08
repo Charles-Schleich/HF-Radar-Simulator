@@ -187,8 +187,8 @@ function matchedFilter(v_rx) # Distance is in meters
     v_mf  = ifft(V_MF)
 
     # Window function
-    # V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
-    # v_mf_window= ifft(V_MF_Window)
+    V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
+    v_mf_window= ifft(V_MF_Window)
 
     return(v_mf_window)
 end
@@ -363,43 +363,82 @@ end
 #                        __/ |                                              
 #                       |___/                                               
 
-function rangeProfileFinder(waveMatrix)
-    arrlength = length(waveMatrix[1])
-    N_antennas = length(waveMatrix)
-    endTime = last(t)
-    numTSamples = length(t)
-    distBetwAnennas= (freq_to_wavelen(f0))/2
+function rangeProfileFinder(wm)
 
-    for i in 1:r_max  # Range 
-        for j in -60:60 # Theta
-            tref = (i + calcSide(i,distBetwAnennas,j))/c;  # Calc Every Time.            
-            vfoc = 0;
+    wm2=hcat(wm...)';
+    
+    print(size(wm2))
 
-            for n in 1:N_antennas
-                xoffRef = n * distBetwAnennas
-                td = calctimeDelay(i, j, xoffRef) # calculates total time delay
+    (N_antennas,numSamples) = size(wm2);
+    distBetwAnennas= (freq_to_wavelen(f0))/2;
+    
+    rangeProfileData = [];
+    println("a");
 
-                tindex= td / t_max
 
-                indexLocation = round(Int,(tindex/endTime)*(length(t)))
+    for i in 1:r_max  # Range       ROWS
 
-                vfoc = vfoc  + waveMatrix[n,indexLocation]*exp(im*2*pi*f0(td-tref))
-            end
+        intermediate = [];
 
+        if(i%1000==0)
+            println(i);
         end
+
+        for j in 150:-1:30 # Theta     COLS
+            # Taking right hand axis as angle reference
+            # taking TX antenna as position reference. 
+            # tref = total_dist / speed 
+            tref = (i + calcSide(i,distBetwAnennas,j))/c;  # Calc Every Time.
+            
+                
+            vfoc = 0;
+            for n in 1:N_antennas
+                
+                
+                xoffRef = n * distBetwAnennas;
+                td = calctimeDelay(i, j, xoffRef); # calculates total time delay
+                
+                tindex = td / t_max;
+                
+                if tindex>1
+                    tindex=1
+                end
+                # indexLocation = round(Int, (tindex/numSamples)*(length(t)) );
+                indexLocation = round(Int, numSamples* tindex );
+
+                # println(td,"  ", tindex , "   " , indexLocation)
+                vfoc = vfoc + wm2[n,indexLocation]*exp(im*2*pi*f0*(td-tref));
+
+            end # End antennas
+
+            push!(intermediate,vfoc) ;
+
+        end # End Cols
+            push!(rangeProfileData,intermediate);
     end
-end
+
+    rpdMatrix=hcat(rangeProfileData...)';
+
+    println(size(rpdMatrix))
+
+    print("Gods plan ?")
+    return(1);
+
+end # End function
 
 calctimeDelay(Range, ang, xoffRef) = (Range + calcSide(Range, xoffRef,ang))/c
 
 
-function gen6AntennaData()
+# calc 3rd side given s1 s2 and angle
+# calcSide(s1,s2,a)= ( (s1^2+s2^2)-2*s1*s2*cosd(a) )^0.5
 
-end
+#calc angle given 3 sides.
+# calcAngle(opposite,adj1,adj2)= acosd((opposite^2-adj1^2-adj2^2)/(-2*adj2*adj1))
+
+
 
 # a= [[1,2,3],[4,5,6],[7,8,9]]
 # append!(c,[b])
-
 
 function meeting1()
     wf = waveformAtDistance(150E3)
