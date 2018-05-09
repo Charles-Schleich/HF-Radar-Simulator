@@ -33,7 +33,6 @@ function initializeSim(centreF, bandW, sampleRate,pulseT)
     global B  = bandW; # Chirp bandwidth
     global fs = sampleRate; # This is the sample rate required for 30MHz.
 
-
     # Dependents
     global dt = 1/fs;  # This is the sample spacing
     global t = 0:dt:t_max; # define a time vector containing the time values of the samples
@@ -44,6 +43,8 @@ function initializeSim(centreF, bandW, sampleRate,pulseT)
     # global  T = (5E-5); # Chirp pulse length
     global  T = pulseT/(10^6)
     global  r_Blind =  (T*c)/2
+    global  rangeRes =  c/(2*B)
+
 
     global  K = B/T;    # Chirp rate
     global td = 0.6*T; # Chirp delay
@@ -76,6 +77,7 @@ function defaultSimParams()
     global  T = (1E-5); # Chirp pulse length
 
     global  r_Blind =  (T*c)/2
+    global  rangeRes =  c/(2*B)
 
     global K = B/T;    # Chirp rate
     global td = 0 #0.6*T; # Chirp delay
@@ -372,25 +374,27 @@ function rangeProfileFinder(wm)
     (N_antennas,numSamples) = size(wm2);
     distBetwAnennas= (freq_to_wavelen(f0))/2;
     
-    rangeProfileData = [];
+    global rangeProfileData = [];
     println("a");
 
+    # rangeRes
 
-    for i in 1:r_max  # Range       ROWS
+    for i in 1:4:r_max  # Range ROWS
 
         intermediate = [];
 
-        if(i%1000==0)
-            println(i);
+        if((i-1)%4000==0)
+            println(i-1);
         end
 
-        for j in 150:-1:30 # Theta     COLS
+        for j in 150:-0.25:30 # Theta     COLS
             # Taking right hand axis as angle reference
             # taking TX antenna as position reference. 
             # tref = total_dist / speed 
+            # println(j);
+
             tref = (i + calcSide(i,distBetwAnennas,j))/c;  # Calc Every Time.
-            
-                
+
             vfoc = 0;
             for n in 1:N_antennas
                 
@@ -403,10 +407,10 @@ function rangeProfileFinder(wm)
                 if tindex>1
                     tindex=1
                 end
-                # indexLocation = round(Int, (tindex/numSamples)*(length(t)) );
+
                 indexLocation = round(Int, numSamples* tindex );
 
-                # println(td,"  ", tindex , "   " , indexLocation)
+
                 vfoc = vfoc + wm2[n,indexLocation]*exp(im*2*pi*f0*(td-tref));
 
             end # End antennas
