@@ -344,7 +344,7 @@ function showRXWaveform(rxNum)
     close("all")
     print(rxNum)
     figure("Recieve Antenna Waveform")
-    title_ = string("Recieve Antenna", rxNum+1,"Wavform")
+    title_ = string("Recieve Antenna ", rxNum+1," Waveform")
     title(title_)
     xlabel("Range")
     ylabel("Amplitude")
@@ -409,7 +409,7 @@ end
 #                     __/ |                                    
 #                    |___/   
 
-function matchedFilter()
+function mFilter()
     if (rxArr[1].wfstage == "RAW")
         for i in rxArr
             temp= matchedFilter(i.wf)
@@ -421,7 +421,7 @@ function matchedFilter()
 end
 
 
-function processRangeProfile()
+function processFocusingAlgorithm()
     # make post window Match filter figure
     if (rxArr[1].wfstage == "RAW")
         for i in rxArr
@@ -429,33 +429,47 @@ function processRangeProfile()
             i.wf= temp;
             i.wfstage = "MF";
         end
+        updateModel();
     end
+
+    if (rxArr[1].wfstage=="MF")
+        
+        for i in rxArr
+            temp = basebandedIQdata(i.wf);
+            i.wf= temp;
+            i.wfstage = "IQ - Baseband";
+        end
+        updateModel();
+    end
+
     # DATA IS IN MF Stage IT NEEDS TO SEND ABSOULTE WAVEFORM 
     dataMatrix = []
     for i in rxArr
-        push!(dataMatrix, abs.(i.wf))
+        push!(dataMatrix, (i.wf))
     end
 
-    rpd = rangeProfileFinder(dataMatrix);
-    println("END")
+    rtm = focussingAlgorithm(dataMatrix);
 
+
+    println("END")
 end
  #  _____  _   _  _____  _______ 
  # |_   _|| \ | ||_   _||__   __|
  #   | |  |  \| |  | |     | |   
  #   | |  | . ` |  | |     | |   
  #  _| |_ | |\  | _| |_    | |   
- # |_____||_| \_||_____|   |_|   
+ # |_____||_| \_||_____|   |_|  
                             
 function initParams(cf,bw,sr,pt)
     cf,bw,sr,pt = parse(Int,cf),parse(Int,bw),parse(Int,sr),parse(Int,pt)
     vt=initializeSim(cf,bw,sr,pt);
+    println("ehre")
     return("Params Initialized")
 end
 
 function loadDefaults() 
-    vt = defaultSimParams();
-    return("Success")
+    a =defaultSimParams();
+    return("Params Initialized")
 end
 
 ############################################################################################################
@@ -473,7 +487,7 @@ allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 recieveModel = ListModel(rxArr)
 
-@qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing showRXWaveform addToPlotRXWaveform clearplot checkSinglePoint processRangeProfile showAbsRXWaveform matchedFilter viewPhase
+@qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing showRXWaveform addToPlotRXWaveform clearplot checkSinglePoint processFocusingAlgorithm showAbsRXWaveform mFilter viewPhase
 # @qmlfunction loadDefaults initParams
 @qmlapp "radar.qml" startModel fileModel recieveModel
 exec()

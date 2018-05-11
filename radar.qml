@@ -39,7 +39,7 @@ ApplicationWindow {
                         color: colour
                         x: layoutMap.width*ex/200000
                         y: layoutMap.height*(1-ey/200000)
-                        width :2
+                        width :5
                         height:5
 
                     }
@@ -69,7 +69,7 @@ ApplicationWindow {
                  }
             
             RowLayout {
-                Label { text: "Centre Frequency (f0):    " }
+                Label { text: "Centre Frequency f0 (Hz) :" }
                 TextField {
                     id:centreFreq
                     placeholderText: qsTr("i.e. 400000Hz")
@@ -79,7 +79,7 @@ ApplicationWindow {
             }
 
             RowLayout {
-                Label { text: "Bandwidth (B):                   " }
+                Label { text: "Bandwidth B (Hz):                " }
                 TextField {
                     id:bandWidth
                     placeholderText: qsTr("i.e. 400000Hz")
@@ -89,17 +89,18 @@ ApplicationWindow {
             }
 
             RowLayout {
-                Label { text: "Sample rate (fs):                " }
+                Label { text: "Sample rate fs (1/s):            " }
                 TextField {
                     id: sampleR
                     placeholderText: qsTr("i.e. 100000 (/s)")
-                    validator: IntValidator { bottom: 0; top: 125000000;}
+                    // validator: IntValidator { bottom: 0; top: 125000000;}
+                    validator: IntValidator { bottom: 0; top: 600000000;}
                 }
                  Label { id:sfStar; color:"red"; text: "" }
             }
 
             RowLayout {
-                Label { text: "Pulse Time (T) µs :             " }
+                Label { text: "Pulse Time T (µs) :                " }
                 TextField {
                     id: pulseT
                     placeholderText: qsTr("i.e. 200 (µs)  ")
@@ -109,7 +110,7 @@ ApplicationWindow {
             }
             
             RowLayout {
-                Label { text: "No* Recv Antennas(N):   " }
+                Label { text: "No* Recv Antennas (N):      " }
                 TextField {
                     id: noAntenna
                     placeholderText: qsTr(" 2 - 10 ")
@@ -214,8 +215,7 @@ ApplicationWindow {
         Button {
             text: "Load Default Parameters"
             onClicked : {
-                var a = Julia.loadDefaults()
-                infoSimParams.text = a
+                // infoSimParams.text = a
             // # Variables
                 centreFreq.text = 4000000
                 bandWidth.text  = 4000000
@@ -237,7 +237,9 @@ ApplicationWindow {
                 blindRange.text = br
                 antennaspacing.text = antSpe
 
-                var a = Julia.initParams(centreFreq.text,bandWidth.text,sampleR.text,pulseT.text)
+                // var a = Julia.initParams(centreFreq.text,bandWidth.text,sampleR.text,pulseT.text)
+                var a = Julia.loadDefaults()
+                
                 var b = Julia.addRxAntennas(rxAntennaX.text,rxAntennaY.text,noAntenna.text)
 
                 infoSimParams.text = a
@@ -318,7 +320,7 @@ ApplicationWindow {
                     }
                     else
                     {
-                    Julia.matchedFilter()                    
+                    Julia.mFilter()                    
                     }
 
                     }
@@ -518,12 +520,12 @@ ApplicationWindow {
         }
 
         Button {
-                text: "Make range profile"
+                text: "Process Focussing Algorithm"
                 onClicked : { 
 
                     if(Julia.checkArrSimulate())
                     {
-                        Julia.processRangeProfile()
+                        Julia.processFocusingAlgorithm()
                     }
                     else{
                         processInfo.text = "Cant Sim, Missing RX"

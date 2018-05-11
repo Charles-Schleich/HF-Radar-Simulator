@@ -1,4 +1,6 @@
 
+using PyPlot
+
 # Helping functions 
 rect(x)=(1.0*(abs.(x).<=0.5)); # rect Function 
 freq_to_wavelen(f) = (299792458/f)
@@ -41,6 +43,7 @@ function initializeSim(centreF, bandW, sampleRate,pulseT)
 
     # global  T = (2E-4); # Chirp pulse length
     # global  T = (5E-5); # Chirp pulse length
+
     global  T = pulseT/(10^6)
     global  r_Blind =  (T*c)/2
     global  rangeRes =  c/(2*B)
@@ -63,24 +66,23 @@ function defaultSimParams()
 
     # Variables
     global f0 = 4E6; # Center frequency 
-    global B  = 4E6; # Chirp bandwidth
+    global B  = 2E6; # Chirp bandwidth
     global fs =  30E6; # This is the sample rate required for 30MHz.
-
+    # global fs =  600E6; # This is the sample rate required for 30MHz.
+    
     # Dependents
     global dt = 1/fs;  # This is the sample spacing
     global t = 0:dt:t_max; # define a time vector containing the time values of the samples
     global r = (c*t/2)/1000 ;  # range vector containing the range values of the samples . 
-                        # divided by 1000 for km
     
-    #Creating Initial Pulse
-    # global T = (2E-4); # Chirp pulse length
-    global  T = (1E-5); # Chirp pulse length
+    global T = (2E-4); # Chirp pulse length
+    global K = B/T;    # Chirp rate
+    global td = 0.6*T; #0.6*T; # Chirp delay
 
     global  r_Blind =  (T*c)/2
     global  rangeRes =  c/(2*B)
 
-    global K = B/T;    # Chirp rate
-    global td = 0 #0.6*T; # Chirp delay
+    #Creating reference Pulse
     global v_tx = cos.( 2*pi*(f0*(t-td) + 0.5*K*(t-td).^2) ).*rect((t-td)/T);
 
 end
@@ -124,8 +126,8 @@ function waveformAtDistance(distance)
     v_analytic = ifft(V_ANALYTIC)
 
     # BaseBanded
-    v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
-    return(v_baseband)
+    # v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
+    return(v_analytic)
 end
 
 
@@ -189,11 +191,25 @@ function matchedFilter(v_rx) # Distance is in meters
     v_mf  = ifft(V_MF)
 
     # Window function
-    V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
-    v_mf_window= ifft(V_MF_Window)
+    # V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
+    # v_mf_window= ifft(V_MF_Window)
 
-    return(v_mf_window)
+    return(v_mf)
 end
+
+
+function basebandedIQdata(v_mf) # Distance is in meters
+    V_MF = fft(v_mf)
+    V_ANALYTIC = 2*V_MF 
+    N = length(V_MF);
+    V_ANALYTIC[floor(Int,N/2)+1:Int(N)] = 0;
+    v_analytic = ifft(V_ANALYTIC)
+
+    # BaseBanded
+    v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
+    return(v_baseband)
+end
+
 
 
 
@@ -365,35 +381,29 @@ end
 #                        __/ |                                              
 #                       |___/                                               
 
-function rangeProfileFinder(wm)
+function focussingAlgorithm(wm)
 
     wm2=hcat(wm...)';
     
-    print(size(wm2))
-
     (N_antennas,numSamples) = size(wm2);
     distBetwAnennas= (freq_to_wavelen(f0))/2;
     
-    global rangeProfileData = [];
+    global RthetaMatrix = [];
     println("a");
 
     # rangeRes
 
-    for i in 1:4:r_max  # Range ROWS
+    for i in 1:10:r_max  # Range ROWS
 
         intermediate = [];
 
-        if((i-1)%4000==0)
+        if((i-1)%20000==0)
             println(i-1);
         end
 
-        for j in 150:-0.25:30 # Theta     COLS
-            # Taking right hand axis as angle reference
-            # taking TX antenna as position reference. 
-            # tref = total_dist / speed 
-            # println(j);
-
-            tref = (i + calcSide(i,distBetwAnennas,j))/c;  # Calc Every Time.
+        for j in -60:5:60 # Theta     COLS
+            
+            tref = (i + calcSide(i,distBetwAnennas,j))/c;  # Calc Every Time
 
             vfoc = 0;
             for n in 1:N_antennas
@@ -418,15 +428,14 @@ function rangeProfileFinder(wm)
             push!(intermediate,vfoc) ;
 
         end # End Cols
-            push!(rangeProfileData,intermediate);
+            push!(RthetaMatrix,intermediate);
     end
 
-    rpdMatrix=hcat(rangeProfileData...)';
+    rtMatrix=hcat(RthetaMatrix...)';
 
-    println(size(rpdMatrix))
+    # println(size(rtMatrix))
 
-    print("Gods plan ?")
-    return(1);
+    return(rtMatrix);
 
 end # End function
 
@@ -438,7 +447,6 @@ calctimeDelay(Range, ang, xoffRef) = (Range + calcSide(Range, xoffRef,ang))/c
 
 #calc angle given 3 sides.
 # calcAngle(opposite,adj1,adj2)= acosd((opposite^2-adj1^2-adj2^2)/(-2*adj2*adj1))
-
 
 
 # a= [[1,2,3],[4,5,6],[7,8,9]]
@@ -491,5 +499,104 @@ function meeting2()
     # dist1 = 99973.48701226292 + 100E3
     # dist2 = 99973.48701226292 + 100026.52001898746
     # fromDistCalc(dist1,dist2)
+
+end
+
+
+function graphAnalyticWaveform()
+
+    R1 = 100000 ; # distance to target 
+    td1 = 2*R1/c;# Two way delay to target.
+    A1 = 1/R1^sf;
+    #Chirp Signal
+    v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T);
+    
+    #FFT of Chirp
+    V_TX= (fft(v_tx));
+    V_RX= (fft(v_rx));
+
+    # Frequency Axes
+    N=length(t);
+    f_axes=(-N/2:N/2-1)*fs/(N);
+
+    # Matched Filtering
+    H = conj(V_TX);
+    V_MF  = H.*V_RX;
+
+    # Analytic Signal 
+    V_ANALYTIC = 2*V_MF
+
+##############
+    close("all")
+    # figure("post Matched Filter in frequency domain")
+    # title("Post Matched Filter in frequency domain")
+    # grid("on")
+    # plot(f_axes , abs.( fftshift(V_MF)))
+    # xlabel("Frequency axes (Hz)")
+
+    N = length(V_MF);
+    # V_ANALYTIC[1:Int(floor(N/2))] = 0;
+    V_ANALYTIC[floor(Int,N/2)+1:Int(N)] = 0;
+
+    
+##############
+    # figure()
+    # title("Fourier Domain Analytic")
+    # plot(f_axes, abs.(fftshift(V_ANALYTIC)))
+    # grid("on")
+    # xlabel("Frequency (Hz)")
+
+    v_analytic = ifft(V_ANALYTIC)
+    
+##############
+    # figure("Analytic Signal time Domain")
+    # title("Analytic Signal time Domain")
+    # grid("on")
+    # plot(r,abs.(v_analytic))
+    # xlabel("Range (Km)")
+
+    # figure()
+    # title("Absolute Time domain Analytic")
+    # plot(r,abs.(v_analytic))
+    # grid("on")
+    # xlabel("Range (Km)")
+    
+    # figure()
+    # title("phase Time domain Analytic")
+    # plot(r,angle.(v_analytic))
+    # grid("on")
+    # xlabel("Range (Km)")
+    # figure()
+
+    # BaseBanded
+    v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
+
+    # figure()
+    # # subplot(2,1,1)
+    # title("Baseband Magnitude")
+    # plot(r,abs.(v_baseband))
+    # grid("on")
+    # xlabel("Range (km)")
+    
+    # figure()
+    # subplot(3,1,1)
+    # title("Baseband Phase")
+    # plot(r,angle.(v_baseband))
+    # grid("on")
+    # subplot(3,1,2)
+    # plot(r,angle.(v_baseband))
+    # grid("on")
+    # subplot(3,1,3)
+    # plot(r,angle.(v_baseband))
+    # grid("on")
+    # xlabel("Range (km)")
+    figure()
+    title("Baseband Magnitude and Phase")
+    plot(r,abs.(v_baseband*1E7))
+    plot(r,angle.(v_baseband))
+    grid("on")
+    xlabel("Range (km)")
+
+
 
 end
