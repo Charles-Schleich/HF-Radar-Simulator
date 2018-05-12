@@ -75,7 +75,8 @@ function defaultSimParams()
     global t = 0:dt:t_max; # define a time vector containing the time values of the samples
     global r = (c*t/2)/1000 ;  # range vector containing the range values of the samples . 
     
-    global T = (2E-4); # Chirp pulse length
+    # global T = (2E-4); # Chirp pulse length
+    global T = (1E-6); # Chirp pulse length
     global K = B/T;    # Chirp rate
     global td = 0.6*T; #0.6*T; # Chirp delay
 
@@ -441,17 +442,6 @@ end # End function
 
 calctimeDelay(Range, ang, xoffRef) = (Range + calcSide(Range, xoffRef,ang))/c
 
-
-# calc 3rd side given s1 s2 and angle
-# calcSide(s1,s2,a)= ( (s1^2+s2^2)-2*s1*s2*cosd(a) )^0.5
-
-#calc angle given 3 sides.
-# calcAngle(opposite,adj1,adj2)= acosd((opposite^2-adj1^2-adj2^2)/(-2*adj2*adj1))
-
-
-# a= [[1,2,3],[4,5,6],[7,8,9]]
-# append!(c,[b])
-
 function meeting1()
     wf = waveformAtDistance(150E3)
     figure("")
@@ -528,75 +518,34 @@ function graphAnalyticWaveform()
 
 ##############
     close("all")
-    # figure("post Matched Filter in frequency domain")
-    # title("Post Matched Filter in frequency domain")
-    # grid("on")
-    # plot(f_axes , abs.( fftshift(V_MF)))
-    # xlabel("Frequency axes (Hz)")
-
+ 
     N = length(V_MF);
-    # V_ANALYTIC[1:Int(floor(N/2))] = 0;
     V_ANALYTIC[floor(Int,N/2)+1:Int(N)] = 0;
-
-    
-##############
-    # figure()
-    # title("Fourier Domain Analytic")
-    # plot(f_axes, abs.(fftshift(V_ANALYTIC)))
-    # grid("on")
-    # xlabel("Frequency (Hz)")
 
     v_analytic = ifft(V_ANALYTIC)
     
-##############
-    # figure("Analytic Signal time Domain")
-    # title("Analytic Signal time Domain")
-    # grid("on")
-    # plot(r,abs.(v_analytic))
-    # xlabel("Range (Km)")
 
-    # figure()
-    # title("Absolute Time domain Analytic")
-    # plot(r,abs.(v_analytic))
-    # grid("on")
-    # xlabel("Range (Km)")
-    
-    # figure()
-    # title("phase Time domain Analytic")
-    # plot(r,angle.(v_analytic))
-    # grid("on")
-    # xlabel("Range (Km)")
-    # figure()
-
-    # BaseBanded
     v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
 
-    # figure()
-    # # subplot(2,1,1)
-    # title("Baseband Magnitude")
-    # plot(r,abs.(v_baseband))
-    # grid("on")
-    # xlabel("Range (km)")
     
-    # figure()
-    # subplot(3,1,1)
-    # title("Baseband Phase")
-    # plot(r,angle.(v_baseband))
-    # grid("on")
-    # subplot(3,1,2)
-    # plot(r,angle.(v_baseband))
-    # grid("on")
-    # subplot(3,1,3)
-    # plot(r,angle.(v_baseband))
-    # grid("on")
-    # xlabel("Range (km)")
     figure()
     title("Baseband Magnitude and Phase")
     plot(r,abs.(v_baseband*1E7))
     plot(r,angle.(v_baseband))
     grid("on")
     xlabel("Range (km)")
-
-
-
 end
+
+
+# nice Scenarios
+# type  x       y  
+# TAR   193481  152713
+# TAR   16441   76389
+# TAR   137085  112856
+#       140512  158349 
+#       124539  117604
+#       45005   109994 
+#       36139   150270 
+#       141079  88953
+#       139818  89050
+#       148731  178770       

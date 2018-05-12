@@ -6,6 +6,8 @@ using CSV
 using QML
 # using GR
 using PyPlot # works with JuliaDisplay
+using DataFrames
+
 # using Plots
 # using PlotLy
 
@@ -23,20 +25,6 @@ type fileName
     filename::String
 end
 
-type distToTarg
-    tar::String
-    distance::Float64
-end
-
-type rxDist
-    rx ::String
-    dists ::Array{distToTarg}
-end
-
-type txDist
-    tx :: String
-    dists :: Array{distToTarg}
-end
 
 # DEFINE ARRAYS 
 txArr = AntennaObject[]
@@ -152,6 +140,32 @@ function readInCSV(fileName::String)
     end 
 end
 
+
+function saveScenario(filename)
+    print(filename)
+
+    idcol=String[]
+    typeCol=String[]
+    xcol=Float64[]
+    ycol=Float64[]
+    colourcol=String[]
+
+    allElem = AntennaObject[]
+    allElem = [txArr; targetArr;rxArr]
+
+    for i in allElem
+        push!(idcol,i._id)
+        push!(typeCol,i.typ)
+        push!(xcol,i.ex)
+        push!(ycol,i.ey)
+        push!(colourcol,i.colour)
+    end
+    dataF = DataFrame(id =idcol,typ=typeCol,ex=xcol,ey=ycol,colour=colourcol)
+
+    CSV.write(filename, dataF)
+end
+
+
 function emptyArrays()
     global txArr = AntennaObject[]
     global rxArr = AntennaObject[]
@@ -198,22 +212,6 @@ function calcDist(source::AntennaObject , target::AntennaObject)
     return(r)
 end
 
-function distRxToTargets(rxArr, targetArr)
-    for i in (rxArr)
-        distTargArr = distToTarg[]
-        for j in (targetArr)
-            r = calcDist(i,j)
-            push!(distTargArr, distToTarg(j._id,r))
-            println(i._id, " to " , j._id,  " : ", r)
-        end
-        push!(rxDistArray,rxDist(i._id,distTargArr))
-    end
-end
-
-function outputDistances()
-    global rxDistArray = rxDist[]
-    distRxToTargets(rxArr,targetArr)
-end
 
 function getElemNumber(objType::String)
     if objType=="RX"
@@ -342,7 +340,7 @@ end
 
 function showRXWaveform(rxNum)
     close("all")
-    print(rxNum)
+    
     figure("Recieve Antenna Waveform")
     title_ = string("Recieve Antenna ", rxNum+1," Waveform")
     title(title_)
@@ -416,31 +414,29 @@ function mFilter()
             i.wf= temp
             i.wfstage = "MF"
         end
+        updateModel();
     end
-    updateModel();
+end
+
+
+function IQ_bb()
+    mFilter();
+    if (rxArr[1].wfstage=="MF") 
+        for i in rxArr
+            temp = basebandedIQdata(i.wf);
+            i.wf= temp;
+            i.wfstage = "IQ - Baseband";
+        updateModel();
+        end
+    end
+
 end
 
 
 function processFocusingAlgorithm()
     # make post window Match filter figure
-    if (rxArr[1].wfstage == "RAW")
-        for i in rxArr
-            temp= matchedFilter(i.wf);
-            i.wf= temp;
-            i.wfstage = "MF";
-        end
-        updateModel();
-    end
-
-    if (rxArr[1].wfstage=="MF")
-        
-        for i in rxArr
-            temp = basebandedIQdata(i.wf);
-            i.wf= temp;
-            i.wfstage = "IQ - Baseband";
-        end
-        updateModel();
-    end
+    mFilter() # matched filter the output 
+    IQ_bb()   # make baseband IQ data 
 
     # DATA IS IN MF Stage IT NEEDS TO SEND ABSOULTE WAVEFORM 
     dataMatrix = []
@@ -450,9 +446,9 @@ function processFocusingAlgorithm()
 
     rtm = focussingAlgorithm(dataMatrix);
 
-
     println("END")
 end
+
  #  _____  _   _  _____  _______ 
  # |_   _|| \ | ||_   _||__   __|
  #   | |  |  \| |  | |     | |   
@@ -463,7 +459,6 @@ end
 function initParams(cf,bw,sr,pt)
     cf,bw,sr,pt = parse(Int,cf),parse(Int,bw),parse(Int,sr),parse(Int,pt)
     vt=initializeSim(cf,bw,sr,pt);
-    println("ehre")
     return("Params Initialized")
 end
 
@@ -487,7 +482,7 @@ allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 recieveModel = ListModel(rxArr)
 
-@qmlfunction targetExists addTarget outputDistances addRxAntennas getElemNumber emptyArrays readInCSV isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing showRXWaveform addToPlotRXWaveform clearplot checkSinglePoint processFocusingAlgorithm showAbsRXWaveform mFilter viewPhase
+@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing showRXWaveform addToPlotRXWaveform clearplot checkSinglePoint processFocusingAlgorithm showAbsRXWaveform IQ_bb viewPhase 
 # @qmlfunction loadDefaults initParams
 @qmlapp "radar.qml" startModel fileModel recieveModel
 exec()

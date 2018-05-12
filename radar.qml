@@ -311,7 +311,7 @@ ApplicationWindow {
      ColumnLayout{
 
     Button {
-                text: "MF Waveform"
+                text: "mk IQ data"
                 onClicked : {
 
                     if(Julia.checkArrSimulate()==false){
@@ -320,7 +320,7 @@ ApplicationWindow {
                     }
                     else
                     {
-                    Julia.mFilter()                    
+                    Julia.IQ_bb()                   
                     }
 
                     }
@@ -470,6 +470,80 @@ ApplicationWindow {
                         Julia.makeRandomTargets()
                     }
                 }
+
+            Label { text: "Save Scenario:" }
+            
+            RowLayout{      
+            TextField {
+                    id: saveScenarioText
+                    placeholderText: qsTr("Filename")
+                    }
+
+            Button {
+                    text: "Save"
+                    onClicked : { 
+
+                        if (saveScenarioText.text=="")
+                        {
+                            infoScene.text = "Please enter save Filename" 
+                            infoScene.color = "red"
+                        }
+                        else{
+                            if( Julia.isfile("scenarios/"+saveScenarioText.text) )
+                            {
+                                infoScene.text = "File already Exists" 
+                                infoScene.color = "red"
+                            }
+                            else
+                            {
+                                Julia.saveScenario("scenarios/" + saveScenarioText.text)
+                                infoScene.text = "Saving..."
+                                infoScene.color = "green"
+                            }
+                        }
+
+
+
+                    }
+                }
+
+            }
+
+            Label { text: "Load Scenario:" }
+            
+            RowLayout{
+                TextField {
+                    id: scenario
+                    placeholderText: qsTr("Filename")
+                    }
+            Button {
+                    text: "Load"
+                    onClicked : {
+
+                        if (scenario.text=="")
+                        {
+                            infoScene.text = "No Filename Entered" 
+                            infoScene.color = "red"
+                        }
+                        else{
+                            if(Julia.isfile("scenarios/"+scenario.text))
+                            {
+                                // infoScene.text = "file ! found"
+                                infoScene.text = "File Loaded" 
+                                infoScene.color = "green"
+                            }
+                            else
+                            {
+                                infoScene.text = "File not found"
+                                infoScene.color = "red"
+                            }
+                        }
+
+                    }
+                }  
+            }
+
+            Label { id:infoScene; text: "" }
 
         Label { text: "" }   
         Label { text: "Scenario objects";  font.underline : true }   
