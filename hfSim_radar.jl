@@ -1,4 +1,12 @@
 
+# import PyPlot
+
+# import ImageView
+# import Images
+
+
+# using Plots
+# pyplot()
 using PyPlot
 
 # Helping functions 
@@ -76,7 +84,10 @@ function defaultSimParams()
     global r = (c*t/2)/1000 ;  # range vector containing the range values of the samples . 
     
     # global T = (2E-4); # Chirp pulse length
-    global T = (1E-6); # Chirp pulse length
+    # global T = (1E-6); # Chirp pulse length
+    global T = (100E-6); # Chirp pulse length
+    # global T = (10E-6); # Chirp pulse length
+
     global K = B/T;    # Chirp rate
     global td = 0.6*T; #0.6*T; # Chirp delay
 
@@ -211,35 +222,30 @@ function basebandedIQdata(v_mf) # Distance is in meters
     return(v_baseband)
 end
 
-
-
-
-
-
 # This function was used to test whether there was any numeric Difference
 # between adding the raw waveforms then matched filtering the summation
 # and matched filtering each waveform and adding them post match waveform
 # i.e. Matched_Filter(a + b) vs Matched_Filter(a) +  Matched_Filter(b)
-function testRaw() 
-    a = wavAtDist_AfterMF(150000);
-    b = wavAtDist_AfterMF(175000);
-    b2= wavAtDist_AfterMF(200000);
-    f = a + b + b2
+# function testRaw() 
+#     a = wavAtDist_AfterMF(150000);
+#     b = wavAtDist_AfterMF(175000);
+#     b2= wavAtDist_AfterMF(200000);
+#     f = a + b + b2
 
-    c = wavRaw(150000);
-    d = wavRaw(175000);
-    d2 = wavRaw(200000);
-    e = matchedFilter(d + c + d2); 
+#     c = wavRaw(150000);
+#     d = wavRaw(175000);
+#     d2 = wavRaw(200000);
+#     e = matchedFilter(d + c + d2); 
 
-    close("all")
-    plot(r, abs.(e))
-    plot(r, abs.(f))
-    println(f[1])
-    println(e[1])
-    g=f -e 
-    figure()
-    plot((g))
-end
+#     close("all")
+#     plot(r, abs.(e))
+#     plot(r, abs.(f))
+#     println(f[1])
+#     println(e[1])
+#     g=f -e 
+#     figure()
+#     plot((g))
+# end
 
 
 #  ______  _             _   _____              _         
@@ -373,14 +379,14 @@ function fromDistCalc(dist1,dist2)
     calculateIncommingAngle(sigA_bb,sigB_bb)
 end
 
-#  _____                                _____               __  _  _        
-# |  __ \                              |  __ \             / _|(_)| |       
-# | |__) | __ _  _ __    __ _   ___    | |__) |_ __  ___  | |_  _ | |  ___  
-# |  _  / / _` || '_ \  / _` | / _ \   |  ___/| '__|/ _ \ |  _|| || | / _ \ 
-# | | \ \| (_| || | | || (_| ||  __/   | |    | |  | (_) || |  | || ||  __/ 
-# |_|  \_\\__,_||_| |_| \__, | \___|   |_|    |_|   \___/ |_|  |_||_| \___| 
-#                        __/ |                                              
-#                       |___/                                               
+ #  ______                        _                           _                      _  _    _                
+ # |  ____|                      (_)                   /\    | |                    (_)| |  | |               
+ # | |__  ___    ___  _   _  ___  _  _ __    __ _     /  \   | |  __ _   ___   _ __  _ | |_ | |__   _ __ ___  
+ # |  __|/ _ \  / __|| | | |/ __|| || '_ \  / _` |   / /\ \  | | / _` | / _ \ | '__|| || __|| '_ \ | '_ ` _ \ 
+ # | |  | (_) || (__ | |_| |\__ \| || | | || (_| |  / ____ \ | || (_| || (_) || |   | || |_ | | | || | | | | |
+ # |_|   \___/  \___| \__,_||___/|_||_| |_| \__, | /_/    \_\|_| \__, | \___/ |_|   |_| \__||_| |_||_| |_| |_|
+ #                                           __/ |                __/ |                                       
+ #                                          |___/                |___/                                        
 
 function focussingAlgorithm(wm)
 
@@ -393,7 +399,7 @@ function focussingAlgorithm(wm)
     println("a");
 
     # rangeRes
-
+    # use Range
     for i in 1:10:r_max  # Range ROWS
 
         intermediate = [];
@@ -402,13 +408,12 @@ function focussingAlgorithm(wm)
             println(i-1);
         end
 
-        for j in -60:5:60 # Theta     COLS
+        for j in -60:1:60 # Theta     Cols
             
             tref = (i + calcSide(i,distBetwAnennas,j))/c;  # Calc Every Time
 
             vfoc = 0;
             for n in 1:N_antennas
-                
                 
                 xoffRef = n * distBetwAnennas;
                 td = calctimeDelay(i, j, xoffRef); # calculates total time delay
@@ -418,10 +423,8 @@ function focussingAlgorithm(wm)
                 if tindex>1
                     tindex=1
                 end
-
+                #  probably a bad method (Going over the length of the array)
                 indexLocation = round(Int, numSamples* tindex );
-
-
                 vfoc = vfoc + wm2[n,indexLocation]*exp(im*2*pi*f0*(td-tref));
 
             end # End antennas
@@ -432,28 +435,124 @@ function focussingAlgorithm(wm)
             push!(RthetaMatrix,intermediate);
     end
 
-    rtMatrix=hcat(RthetaMatrix...)';
-
-    # println(size(rtMatrix))
-
-    return(rtMatrix);
-
+    # rtMatrix=hcat(RthetaMatrix...)';
+    
+    # RthetaMatrix = [[1,2],[3,4],[5,6],[7,8]]
+    return(RthetaMatrix);
 end # End function
+
+ #                    _           _____                                
+ #                   | |         |_   _|                               
+ #  _ __ ___    __ _ | | __ ___    | |   _ __ ___    __ _   __ _   ___ 
+ # | '_ ` _ \  / _` || |/ // _ \   | |  | '_ ` _ \  / _` | / _` | / _ \
+ # | | | | | || (_| ||   <|  __/  _| |_ | | | | | || (_| || (_| ||  __/
+ # |_| |_| |_| \__,_||_|\_\\___| |_____||_| |_| |_| \__,_| \__, | \___|
+ #                                                         __/ |      
+ #                                                        |___/       
+###############################
+dist(x,y) = sqrt( (x-500)^2 + (y-1000)^2 )
+calcangle(x,y)= atand(y/x)
+###############################
+
+function make_image(rtmatrix)
+
+    println("--------------------------")
+    println("Here1")
+    dataArray=rtmatrix;
+    println("Here2")
+########################################################################
+    global imageArr= [];
+    for y in 1:1000
+        rowData = [];
+        for x in 1:1000
+
+            if(x==500 && y == 1000)
+                theta = 90;
+            else
+                theta = calcangle(x-500,1000-y);
+            end
+
+            range_=(dist(x,y)*20);
+
+            if (range_>20000) ||  ( ( theta < 30) && (theta > -30))# No Data Region 
+                foc=0; 
+            else
+                if (theta<0) #Negative Degrees
+                    newtheta = -theta - 90; # convert from -30 -> -90 to -60 -> 0
+                    arrIndex = newtheta + 61; # length of subArray
+
+                    topTheta = ceil(Int,arrIndex);
+                    bottomTheta= floor(Int,arrIndex);
+
+                    topR   = ceil(Int,range_);
+                    bottomR= floor(Int,range_);
+
+                    foc1 = dataArray[topR][topTheta];
+                    foc2 = dataArray[topR][bottomTheta];
+                    foc3 = dataArray[bottomR][topTheta];
+                    foc4 = dataArray[bottomR][bottomTheta];
+
+                    foc=mean([foc1,foc2,foc3,foc4]);
+
+                else        #Positive Degrees 
+                    newtheta = -theta + 90; # convert from 90 -> 30 to 0 -> 60
+                    arrIndex = newtheta + 61; 
+
+                    topTheta = ceil(Int,arrIndex);
+                    bottomTheta= floor(Int,arrIndex);
+                    topR   = ceil(Int,range_);
+                    bottomR= floor(Int,range_);
+
+                    foc1 = dataArray[topR][topTheta];
+                    foc2 = dataArray[topR][bottomTheta];
+                    foc3 = dataArray[bottomR][topTheta];
+                    foc4 = dataArray[bottomR][bottomTheta];
+
+
+                    foc=mean([foc1,foc2,foc3,foc4]);
+                end
+            end
+            push!(rowData, foc);
+        end
+        push!(imageArr,rowData);
+        println("Done with Row")
+    end
+
+    println("finished Creating Image")
+
+########################################################################
+    # currentMax = 0;
+    # for i in 1:length(imageArr)
+    #     imageArr[i]= abs.(imageArr[i]);
+    #     currentMax = maximum(imageArr[i]);
+    # end
+
+    # for i in 1:length(imageArr)
+    #     imageArr[i] = (imageArr[i])/currentMax;
+    # end
+
+    # println("show")
+    # global imgArr = hcat(imageArr...)';
+    # imshow(imgArr);
+    # println("shown")
+    return(1)
+end
+
 
 calctimeDelay(Range, ang, xoffRef) = (Range + calcSide(Range, xoffRef,ang))/c
 
-function meeting1()
-    wf = waveformAtDistance(150E3)
-    figure("")
-    title("")
-    grid("on")
-    plot(r,abs.(wf))
+# function meeting1()
+#     wf = waveformAtDistance(150E3)
+#     figure("")
+#     title("")
+#     grid("on")
+#     plot(r,abs.(wf))
     
-    figure("Angle")
-    title("Angle")
-    grid("on")
-    plot(r,angle.(wf))
-end
+#     figure("Angle")
+#     title("Angle")
+#     grid("on")
+#     plot(r,angle.(wf))
+# end
 
 function meeting2()
     # 45 Degree Example 
@@ -493,49 +592,46 @@ function meeting2()
 end
 
 
-function graphAnalyticWaveform()
+# function graphAnalyticWaveform()
 
-    R1 = 100000 ; # distance to target 
-    td1 = 2*R1/c;# Two way delay to target.
-    A1 = 1/R1^sf;
-    #Chirp Signal
-    v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T);
+#     R1 = 100000 ; # distance to target 
+#     td1 = 2*R1/c;# Two way delay to target.
+#     A1 = 1/R1^sf;
+#     #Chirp Signal
+#     v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T);
     
-    #FFT of Chirp
-    V_TX= (fft(v_tx));
-    V_RX= (fft(v_rx));
+#     #FFT of Chirp
+#     V_TX= (fft(v_tx));
+#     V_RX= (fft(v_rx));
 
-    # Frequency Axes
-    N=length(t);
-    f_axes=(-N/2:N/2-1)*fs/(N);
+#     # Frequency Axes
+#     N=length(t);
+#     f_axes=(-N/2:N/2-1)*fs/(N);
 
-    # Matched Filtering
-    H = conj(V_TX);
-    V_MF  = H.*V_RX;
+#     # Matched Filtering
+#     H = conj(V_TX);
+#     V_MF  = H.*V_RX;
 
-    # Analytic Signal 
-    V_ANALYTIC = 2*V_MF
+#     # Analytic Signal 
+#     V_ANALYTIC = 2*V_MF
 
-##############
-    close("all")
+# ##############
+#     close("all")
  
-    N = length(V_MF);
-    V_ANALYTIC[floor(Int,N/2)+1:Int(N)] = 0;
+#     N = length(V_MF);
+#     V_ANALYTIC[floor(Int,N/2)+1:Int(N)] = 0;
 
-    v_analytic = ifft(V_ANALYTIC)
-    
+#     v_analytic = ifft(V_ANALYTIC)
 
-    v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
+#     v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
 
-    
-    figure()
-    title("Baseband Magnitude and Phase")
-    plot(r,abs.(v_baseband*1E7))
-    plot(r,angle.(v_baseband))
-    grid("on")
-    xlabel("Range (km)")
-end
-
+#     figure()
+#     title("Baseband Magnitude and Phase")
+#     plot(r,abs.(v_baseband*1E7))
+#     plot(r,angle.(v_baseband))
+#     grid("on")
+#     xlabel("Range (km)")
+# end
 
 # nice Scenarios
 # type  x       y  

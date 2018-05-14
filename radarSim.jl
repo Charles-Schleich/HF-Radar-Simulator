@@ -2,11 +2,15 @@
 #  Charles Schleich, SCHCHA027
 #  University of Capetown undergraduate Thesis 2018
 
+# import Images
+# import ImageView
+
 using CSV
 using QML
 # using GR
-using PyPlot # works with JuliaDisplay
 using DataFrames
+# import PyPlot 
+using PyPlot
 
 # using Plots
 # using PlotLy
@@ -110,6 +114,7 @@ end
 
 function readInCSV(fileName::String)
     # emptying Arrays
+
     emptyArrays()
     fileName=string("scenarios/",fileName)
     dt = CSV.read(fileName,types=[String, String, Float64,Float64,String])
@@ -316,31 +321,31 @@ end
 
 # STILL NOT 100%
 
-function showWaveForm(d::JuliaDisplay,w,h)
-    waveform = readdlm("waveForms/RX0.wf")
-    len = length(waveform)
+# function showWaveForm(d::JuliaDisplay,w,h)
+#     waveform = readdlm("waveForms/RX0.wf")
+#     len = length(waveform)
 
-    # f = figure(figsize=(w/80-0.7,h/80-0.7))
-    # f = figure(figsize=(w/80-0.4,h/80-0.4)) # Fullscreen
-    fsize = (w/100+0.6,h/100+0.8)
+#     # f = figure(figsize=(w/80-0.7,h/80-0.7))
+#     # f = figure(figsize=(w/80-0.4,h/80-0.4)) # Fullscreen
+#     fsize = (w/100+0.6,h/100+0.8)
 
-    f = figure(figsize = fsize  )
-    print(fsize )
-    # x = 0:(pi/100):2*pi
-    # plt = plot(x,sin.(x))
-    # plt = plot(t,abs.(fft(waveform)))
-    plt = plot(t,waveform)
-    display(d,f)
-    close(f)
-    return
-end
+#     f = figure(figsize = fsize  )
+#     print(fsize )
+#     # x = 0:(pi/100):2*pi
+#     # plt = plot(x,sin.(x))
+#     # plt = plot(t,abs.(fft(waveform)))
+#     plt = plot(t,waveform)
+#     display(d,f)
+#     close(f)
+#     return
+# end
 
 
 #  VIEW WAVEFORMS
 
 function showRXWaveform(rxNum)
+    print(rxNum)
     close("all")
-    
     figure("Recieve Antenna Waveform")
     title_ = string("Recieve Antenna ", rxNum+1," Waveform")
     title(title_)
@@ -445,8 +450,11 @@ function processFocusingAlgorithm()
     end
 
     rtm = focussingAlgorithm(dataMatrix);
-
+    returned =make_image(rtm);
+    println("returned")
+ 
     println("END")
+
 end
 
  #  _____  _   _  _____  _______ 
@@ -482,17 +490,7 @@ allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 recieveModel = ListModel(rxArr)
 
-@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames showWaveForm SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing showRXWaveform addToPlotRXWaveform clearplot checkSinglePoint processFocusingAlgorithm showAbsRXWaveform IQ_bb viewPhase 
-# @qmlfunction loadDefaults initParams
+@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot
+
 @qmlapp "radar.qml" startModel fileModel recieveModel
 exec()
-
-# tar0 = readdlm("waveForms/TAR0.txt")
-# tar1 = readdlm("waveForms/TAR1.txt")
-
-# figure();
-# title("Chirp: after first target")
-# xlabel("time ")
-# ylabel("Amplitude")
-# grid("on")
-# plot(t,tar0)
