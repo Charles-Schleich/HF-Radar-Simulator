@@ -114,7 +114,7 @@ ApplicationWindow {
                 TextField {
                     id: noAntenna
                     placeholderText: qsTr(" 2 - 10 ")
-                    validator: IntValidator { bottom: 0; top: 10;}
+                    validator: IntValidator { bottom: 0; top: 100;}
                 }
                  Label { id:nAStar; color:"red"; text: "" }
             }
@@ -220,7 +220,7 @@ ApplicationWindow {
                 centreFreq.text = 4000000
                 bandWidth.text  = 4000000
                 sampleR.text    = 30000000
-                pulseT.text     = 10
+                pulseT.text     = 100
                 noAntenna.text  = 15
                 rxAntennaX.text = 100000
                 rxAntennaY.text = 5000
@@ -600,21 +600,37 @@ ApplicationWindow {
         }
 
         Button {
-                text: "Process Focussing Algorithm"
+                text: "Process Focusing Algorithm"
                 onClicked : { 
 
                     if(Julia.checkArrSimulate())
                     {
                         Julia.processFocusingAlgorithm()
+
                     }
                     else{
-                        processInfo.text = "Cant Sim, Missing RX"
+                        processInfo.text = "Can't Sim, Missing RX"
                         processInfo.color = "red"
-
                     }
-
                 }
         }
+        
+        Button {
+                text: "View Image"
+                onClicked : { 
+
+                    if(Julia.viewImage()==1)
+                    {
+                        processInfo.text = "ImageLoaded"
+                        processInfo.color = "Green"
+                    }
+                    else{
+                        processInfo.text = "No image processed."
+                        processInfo.color = "red"
+                    }
+                }
+        }
+
 
                     Label { id: processInfo; text: "100" }
         } //End column Layout

@@ -74,13 +74,11 @@ using PyPlot
 ####################################3
 ####################################3
 ####################################3
-
-dist(x,y) = sqrt( (x-500)^2 + (y-1000)^2 )
-calcangle(x,y)= atand(y/x)
-
 x_res=1000
 y_res=1000
 
+dist(x,y) = sqrt( (x-(x_res/2))^2 + (y-(y_res))^2 )
+calcangle(x,y)= atand(y/x)
 
 imageArr= []
 for y in 1:1000
@@ -94,15 +92,17 @@ for y in 1:1000
             foc=0 # OUT OF RANGE/ANGLE CONDITION
         else
             # println(x," ",y," ",theta)
-            if (theta<0)
-                foc=0.8
-            else
-                if theta < 31
-                foc=1
-                else
-                foc=0.1                
-                end
-            end
+            foc=x+y
+            # if (theta<0)
+            #     foc=0.8
+            # else
+            #     if theta < 31
+            #     foc=1
+            #     else
+            #     foc=0.1                
+            #     end
+            # end
+
         end
 
 
@@ -113,7 +113,7 @@ for y in 1:1000
 end
 
 imshow(imageArr)
-
+tight_layout()
 
 ####################################3
 ####################################3

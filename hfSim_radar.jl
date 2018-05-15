@@ -200,7 +200,10 @@ function matchedFilter(v_rx) # Distance is in meters
     # Matched Filtering
     H = conj(V_TX);
     V_MF  = H.*V_RX;
-    v_mf  = ifft(V_MF)
+    v_mf  = ifft(V_MF) 
+
+    scale = r.^sf
+    v_mf=v_mf.*(scale)
 
     # Window function
     # V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
@@ -226,6 +229,10 @@ end
 # between adding the raw waveforms then matched filtering the summation
 # and matched filtering each waveform and adding them post match waveform
 # i.e. Matched_Filter(a + b) vs Matched_Filter(a) +  Matched_Filter(b)
+
+# SOMETHING INTERESTING TO ADD TO REPORT 
+# SOMETHING INTERESTING TO ADD TO REPORT 
+# SOMETHING INTERESTING TO ADD TO REPORT 
 # function testRaw() 
 #     a = wavAtDist_AfterMF(150000);
 #     b = wavAtDist_AfterMF(175000);
@@ -396,48 +403,42 @@ function focussingAlgorithm(wm)
     distBetwAnennas= (freq_to_wavelen(f0))/2;
     
     global RthetaMatrix = [];
-    println("a");
+    println("Begin Focussing");
 
     # rangeRes
     # use Range
     for i in 1:10:r_max  # Range ROWS
-
         intermediate = [];
 
         if((i-1)%20000==0)
-            println(i-1);
+            println( i/2000,"% ");
         end
 
         for j in -60:1:60 # Theta     Cols
-            
             tref = (i + calcSide(i,distBetwAnennas,j))/c;  # Calc Every Time
-
             vfoc = 0;
             for n in 1:N_antennas
-                
                 xoffRef = n * distBetwAnennas;
                 td = calctimeDelay(i, j, xoffRef); # calculates total time delay
-                
                 tindex = td / t_max;
-                
                 if tindex>1
                     tindex=1
                 end
                 #  probably a bad method (Going over the length of the array)
+                
                 indexLocation = round(Int, numSamples* tindex );
-                vfoc = vfoc + wm2[n,indexLocation]*exp(im*2*pi*f0*(td-tref));
+                vfoc = vfoc + wm2[n,indexLocation]*exp(-im*2*pi*f0*(td-tref));
 
             end # End antennas
-
             push!(intermediate,vfoc) ;
-
         end # End Cols
             push!(RthetaMatrix,intermediate);
     end
+     println("End");
+    # rtMatrix=hcat(RthetaMatrix...)'
+    println(length(RthetaMatrix))
+    println(length(RthetaMatrix[1]))
 
-    # rtMatrix=hcat(RthetaMatrix...)';
-    
-    # RthetaMatrix = [[1,2],[3,4],[5,6],[7,8]]
     return(RthetaMatrix);
 end # End function
 
@@ -454,22 +455,22 @@ dist(x,y) = sqrt( (x-(x_Res/2))^2 + (y-y_Res)^2 )
 
 calcangle(x,y)= atand(y/x)
 ###############################
-function make_image(rtmatrix)
+function imageProcessingAlgorithm(rtmatrix)
 
     println("--------------------------")
     dataArray=rtmatrix;
-    global x_Res=2000
-    global y_Res=2000
+    global x_Res=1000
+    global y_Res=1000
     
     r_bins = length(rtmatrix)
     a_bins = length(rtmatrix[1])
     r_jumps= floor(Int,r_bins/y_Res)
-    a_jumps= ceil(a_bins/2) 
+    a_jumps= ceil(Int,a_bins/2) 
 
     println("R bins: ",r_bins)
     println("A bins: ",a_bins)
     println("r jumps: ",r_jumps)
-
+    println("a jumps: ",a_jumps)
 ########################################################################
     global imageArr= [];
     for y in 1:y_Res
@@ -491,16 +492,12 @@ function make_image(rtmatrix)
             if (range_>20000) ||  ( ( theta < 30) && (theta > -30))# No Data Region 
                 foc=0; 
             else
-                println(x," ",y," ",range_)
-
                 if (theta<0) # Negative Degrees i.e. First half of angle bins.
                     newtheta = -theta - 90; # convert from -30 -> -90 to -60 -> 0
-
-                    arrIndex = newtheta + 61; # length of subArray
+                    arrIndex = newtheta + a_jumps; # length of subArray
 
                     topTheta = ceil(Int,arrIndex);
                     bottomTheta= floor(Int,arrIndex);
-
                     topR   = ceil(Int,range_);
                     bottomR= floor(Int,range_);
 
@@ -513,7 +510,7 @@ function make_image(rtmatrix)
 
                 else        #Positive Degrees  Second half of angle bings
                     newtheta = -theta + 90; # convert from 90 -> 30 to 0 -> 60
-                    arrIndex = newtheta + 61; 
+                    arrIndex = newtheta + a_jumps; 
 
                     topTheta = ceil(Int,arrIndex);
                     bottomTheta= floor(Int,arrIndex);
@@ -525,7 +522,6 @@ function make_image(rtmatrix)
                     foc3 = dataArray[bottomR][topTheta];
                     foc4 = dataArray[bottomR][bottomTheta];
 
-
                     foc=sum([foc1,foc2,foc3,foc4]);
                 end
             end
@@ -535,9 +531,10 @@ function make_image(rtmatrix)
         # println(y)
     end
 
-    println("done ?")
+    println("Finished Image Creation")
 
 ########################################################################
+
     currentMax = 0;
     for i in 1:length(imageArr)
         imageArr[i]= abs.(imageArr[i]);
@@ -554,26 +551,13 @@ function make_image(rtmatrix)
     imshow(imgArr);
     tight_layout();    
     println("shown")
-    return(1)
+    return(imgArr)
 end
 
 
 calctimeDelay(Range, ang, xoffRef) = (Range + calcSide(Range, xoffRef,ang))/c
 
-# function meeting1()
-#     wf = waveformAtDistance(150E3)
-#     figure("")
-#     title("")
-#     grid("on")
-#     plot(r,abs.(wf))
-    
-#     figure("Angle")
-#     title("Angle")
-#     grid("on")
-#     plot(r,angle.(wf))
-# end
-
-function meeting2()
+function testSinglePointFinder()
     # 45 Degree Example 
     println("45 Deg \n----------")
     dist1 = 100026.1667449112 + 100000

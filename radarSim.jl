@@ -29,11 +29,11 @@ type fileName
     filename::String
 end
 
-
 # DEFINE ARRAYS 
 txArr = AntennaObject[]
 rxArr = AntennaObject[]
 targetArr = AntennaObject[]
+image_ =[]
 
  #   ____   _      _              _        
  #  / __ \ | |    (_)            | |       
@@ -450,13 +450,22 @@ function processFocusingAlgorithm()
     end
 
     rtm = focussingAlgorithm(dataMatrix);
-    returned =make_image(rtm);
-    println("returned")
- 
-    println("END")
+    image =imageProcessingAlgorithm(rtm);
+    global image_ = image;
 
+    println("END")
 end
 
+function viewImage()
+    if image_!=[]
+        figure();
+        imshow(image_);
+        tight_layout();
+        return(1)
+    else
+        return(0)
+    end
+end
  #  _____  _   _  _____  _______ 
  # |_   _|| \ | ||_   _||__   __|
  #   | |  |  \| |  | |     | |   
@@ -490,7 +499,7 @@ allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 recieveModel = ListModel(rxArr)
 
-@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot
+@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot viewImage
 
 @qmlapp "radar.qml" startModel fileModel recieveModel
 exec()
