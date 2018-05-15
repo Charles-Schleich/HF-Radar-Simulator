@@ -221,9 +221,9 @@ ApplicationWindow {
                 bandWidth.text  = 4000000
                 sampleR.text    = 30000000
                 pulseT.text     = 10
-                noAntenna.text  = 6
+                noAntenna.text  = 15
                 rxAntennaX.text = 100000
-                rxAntennaY.text = 10000
+                rxAntennaY.text = 5000
                 cfStar.text=""
                 bwStar.text=""
                 sfStar.text=""

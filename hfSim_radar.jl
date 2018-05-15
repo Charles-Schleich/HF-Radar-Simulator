@@ -450,35 +450,52 @@ end # End function
  #                                                         __/ |      
  #                                                        |___/       
 ###############################
-dist(x,y) = sqrt( (x-500)^2 + (y-1000)^2 )
+dist(x,y) = sqrt( (x-(x_Res/2))^2 + (y-y_Res)^2 )
+
 calcangle(x,y)= atand(y/x)
 ###############################
-
 function make_image(rtmatrix)
 
     println("--------------------------")
-    println("Here1")
     dataArray=rtmatrix;
-    println("Here2")
+    global x_Res=2000
+    global y_Res=2000
+    
+    r_bins = length(rtmatrix)
+    a_bins = length(rtmatrix[1])
+    r_jumps= floor(Int,r_bins/y_Res)
+    a_jumps= ceil(a_bins/2) 
+
+    println("R bins: ",r_bins)
+    println("A bins: ",a_bins)
+    println("r jumps: ",r_jumps)
+
 ########################################################################
     global imageArr= [];
-    for y in 1:1000
+    for y in 1:y_Res
         rowData = [];
-        for x in 1:1000
+        for x in 1:x_Res
 
-            if(x==500 && y == 1000)
+            if(x==(x_Res/2) && y == (y_Res))
                 theta = 90;
             else
-                theta = calcangle(x-500,1000-y);
+                theta = calcangle(x-(x_Res/2),(y_Res)-y);
             end
 
-            range_=(dist(x,y)*20);
+            range_=(dist(x,y)*r_jumps);
+
+            if (range_==0)
+                range_=1
+            end
 
             if (range_>20000) ||  ( ( theta < 30) && (theta > -30))# No Data Region 
                 foc=0; 
             else
-                if (theta<0) #Negative Degrees
+                println(x," ",y," ",range_)
+
+                if (theta<0) # Negative Degrees i.e. First half of angle bins.
                     newtheta = -theta - 90; # convert from -30 -> -90 to -60 -> 0
+
                     arrIndex = newtheta + 61; # length of subArray
 
                     topTheta = ceil(Int,arrIndex);
@@ -492,9 +509,9 @@ function make_image(rtmatrix)
                     foc3 = dataArray[bottomR][topTheta];
                     foc4 = dataArray[bottomR][bottomTheta];
 
-                    foc=mean([foc1,foc2,foc3,foc4]);
+                    foc=sum([foc1,foc2,foc3,foc4]);
 
-                else        #Positive Degrees 
+                else        #Positive Degrees  Second half of angle bings
                     newtheta = -theta + 90; # convert from 90 -> 30 to 0 -> 60
                     arrIndex = newtheta + 61; 
 
@@ -509,32 +526,34 @@ function make_image(rtmatrix)
                     foc4 = dataArray[bottomR][bottomTheta];
 
 
-                    foc=mean([foc1,foc2,foc3,foc4]);
+                    foc=sum([foc1,foc2,foc3,foc4]);
                 end
             end
-            push!(rowData, foc);
+            push!(rowData, foc);    
         end
         push!(imageArr,rowData);
-        println("Done with Row")
+        # println(y)
     end
 
-    println("finished Creating Image")
+    println("done ?")
 
 ########################################################################
-    # currentMax = 0;
-    # for i in 1:length(imageArr)
-    #     imageArr[i]= abs.(imageArr[i]);
-    #     currentMax = maximum(imageArr[i]);
-    # end
+    currentMax = 0;
+    for i in 1:length(imageArr)
+        imageArr[i]= abs.(imageArr[i]);
+        currentMax = maximum(imageArr[i]);
+    end
 
-    # for i in 1:length(imageArr)
-    #     imageArr[i] = (imageArr[i])/currentMax;
-    # end
+    for i in 1:length(imageArr)
+        imageArr[i] = (imageArr[i])/currentMax;
+    end
 
-    # println("show")
-    # global imgArr = hcat(imageArr...)';
-    # imshow(imgArr);
-    # println("shown")
+    println("show")
+    global imgArr = hcat(imageArr...)';
+    figure();
+    imshow(imgArr);
+    tight_layout();    
+    println("shown")
     return(1)
 end
 

@@ -74,16 +74,20 @@ using PyPlot
 ####################################3
 ####################################3
 ####################################3
-#=
+
 dist(x,y) = sqrt( (x-500)^2 + (y-1000)^2 )
 calcangle(x,y)= atand(y/x)
+
+x_res=1000
+y_res=1000
+
 
 imageArr= []
 for y in 1:1000
     rowData = []
-    for x in 1:1000
+    for x in 1:x_res
 
-        theta = calcangle(x-500,1000-y);
+        theta = calcangle(x-(x_res/2),(y_res)-y);
         range_=(dist(x,y)*20)
 
         if (range_>20000) ||  ( ( theta < 30) && (theta > -30)) 
@@ -91,19 +95,7 @@ for y in 1:1000
         else
             # println(x," ",y," ",theta)
             if (theta<0)
-                newtheta = -theta - 90 # convert from -30 -> -90 to -60 -> 0
-                arrIndex = newtheta + 61 # length of subArray
-                
-                top = ceil(Int,arrIndex)
-                bottom= floor(Int,arrIndex)
-                
-
-                foc = dataArray[R][Theta]
-
-                println(theta ," -> ", newtheta)
-                
-                foc=0.5
-
+                foc=0.8
             else
                 if theta < 31
                 foc=1
@@ -121,33 +113,40 @@ for y in 1:1000
 end
 
 imshow(imageArr)
-=#
+
 
 ####################################3
 ####################################3
 ####################################3
 ####################################3
 ####################################3
-# currentMax = 0;
-#     for i in 1:length(imageArr)
-#         imageArr[i]= abs.(imageArr[i]);
-#         currentMax = maximum(imageArr[i]);
-#     end
+    # currentMax = 0;
+    # for i in 1:length(imageArr)
+    #     imageArr[i]= abs.(imageArr[i]);
+    #     currentMax = maximum(imageArr[i]);
+    # end
 
     # for i in 1:length(imageArr)
     #     imageArr[i] = (imageArr[i])/currentMax;
     # end
 
+    # # for i in 1:length(imageArr)
+    # #      for j in 1:length(imageArr[1])
+    # #         if imageArr[i][j]>0
+    # #         imageArr[i][j] = 1
+    # #         end
+    # #     end
+    # # end
 
-    for i in 1:length(imageArr)
-         for j in 1:length(imageArr[1])
-            if imageArr[i][j]>0
-            imageArr[i][j] = 1
-            end
-        end
-    end
+    # println("show")
+    # global imgArr = hcat(imageArr...)';
+    # imshow(imgArr);
+    # println("shown")
 
-    println("show")
-    global imgArr = hcat(imageArr...)';
-    imshow(imgArr);
-    println("shown")
+
+
+# for y in 1:1000
+#     for x in 1:1000
+#         println(x,y)
+#     end
+# end
