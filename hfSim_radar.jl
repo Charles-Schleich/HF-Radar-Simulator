@@ -421,11 +421,12 @@ function focussingAlgorithm(wm)
                 xoffRef = n * distBetwAnennas;
                 td = calctimeDelay(i, j, xoffRef); # calculates total time delay
                 tindex = td / t_max;
+
                 if tindex>1
                     tindex=1
                 end
                 #  probably a bad method (Going over the length of the array)
-                
+
                 indexLocation = round(Int, numSamples* tindex );
                 vfoc = vfoc + wm2[n,indexLocation]*exp(-im*2*pi*f0*(td-tref));
 
@@ -595,46 +596,6 @@ function testSinglePointFinder()
 end
 
 
-# function graphAnalyticWaveform()
-
-#     R1 = 100000 ; # distance to target 
-#     td1 = 2*R1/c;# Two way delay to target.
-#     A1 = 1/R1^sf;
-#     #Chirp Signal
-#     v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T);
-    
-#     #FFT of Chirp
-#     V_TX= (fft(v_tx));
-#     V_RX= (fft(v_rx));
-
-#     # Frequency Axes
-#     N=length(t);
-#     f_axes=(-N/2:N/2-1)*fs/(N);
-
-#     # Matched Filtering
-#     H = conj(V_TX);
-#     V_MF  = H.*V_RX;
-
-#     # Analytic Signal 
-#     V_ANALYTIC = 2*V_MF
-
-# ##############
-#     close("all")
- 
-#     N = length(V_MF);
-#     V_ANALYTIC[floor(Int,N/2)+1:Int(N)] = 0;
-
-#     v_analytic = ifft(V_ANALYTIC)
-
-#     v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
-
-#     figure()
-#     title("Baseband Magnitude and Phase")
-#     plot(r,abs.(v_baseband*1E7))
-#     plot(r,angle.(v_baseband))
-#     grid("on")
-#     xlabel("Range (km)")
-# end
 
 # nice Scenarios
 # type  x       y  
