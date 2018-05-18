@@ -34,7 +34,10 @@ txArr = AntennaObject[]
 rxArr = AntennaObject[]
 targetArr = AntennaObject[]
 image_ =[]
-
+xRef=0
+yRef=0
+distscale = 100
+    
  #   ____   _      _              _        
  #  / __ \ | |    (_)            | |       
  # | |  | || |__   _   ___   ___ | |_  ___ 
@@ -55,16 +58,32 @@ function addTarget(xCoord::String , yCoord::String )
     updateModel();
 end
 
-function addRxAntennas(xCoord::String , yCoord::String, number::String)
-    qwl = freq_to_wavelen(f0)/2
+function addRxAntennas(xCoord::String , yCoord::String, number::String, spacingScale::String)
+
+    
     x = parse(Float64,xCoord)
     y = parse(Float64,yCoord)
     n = parse(Int,number)
+    s = parse(Float64,spacingScale)
+    
+    hwl = s*freq_to_wavelen(f0)/2
+ 
+    #x y is the centre point of the array.
+    global xRef = x
+    global yRef = y
+
+    totallength = hwl*(n-1);
+    xstart = x - totallength/2
     global rxArr = AntennaObject[]
-    addSingleTx(x,y)
+    
+    xTxlocation = xstart - hwl
+    println(xTxlocation)
+
+    addSingleTx(xTxlocation,y)
+
     for i in 1:(n)
-        id = string("RX", length(rxArr))
-        x1 = x + (qwl*i)
+        id = string(length(rxArr))
+        x1 = xstart + (hwl*(i-1))
         y1 = y 
         target = AntennaObject(id,"RX",x1,y1,"orange",[],"None")
         push!(rxArr, target)
@@ -235,9 +254,11 @@ function calcBlind(pulseT)
     return(blindRStr)
 end
 
-function calcSpacing(centerFreq)
+function calcSpacing(centerFreq,scale)
     cf = parse(Int,centerFreq)
-    antennaSpacing = round((299792458/cf)/2,3)
+    scle = parse(Int,scale)
+
+    antennaSpacing = round((scle*(299792458/cf))/2,3)
 
     antennaSpacingStr = string("Antenna Spacing: ", antennaSpacing, "m")
 
@@ -367,7 +388,10 @@ function showAbsRXWaveform(rxNum)
     title(title_)
     xlabel("Range")
     ylabel("Amplitude")
-    plot(r, abs.(rxArr[rxNum+1].wf))
+    for rx in (rxArr)
+        plot(r, abs.(rx.wf))
+    end
+
 end
 
 function viewPhase(rxNum)
@@ -403,14 +427,15 @@ function checkSinglePoint()
     end
 end
 
-#  _____                          _____            __ _ _      
-# |  __ \                        |  __ \          / _(_) |     
-# | |__) |__ _ _ __   __ _  ___  | |__) | __ ___ | |_ _| | ___ 
-# |  _  // _` | '_ \ / _` |/ _ \ |  ___/ '__/ _ \|  _| | |/ _ \
-# | | \ \ (_| | | | | (_| |  __/ | |   | | | (_) | | | | |  __/
-# |_|  \_\__,_|_| |_|\__, |\___| |_|   |_|  \___/|_| |_|_|\___|
-#                     __/ |                                    
-#                    |___/   
+ #  ______                       
+ # |  ____|                      
+ # | |__  ___    ___  _   _  ___ 
+ # |  __|/ _ \  / __|| | | |/ __|
+ # | |  | (_) || (__ | |_| |\__ \
+ # |_|   \___/  \___| \__,_||___/
+                               
+                              
+
 
 function mFilter()
     if (rxArr[1].wfstage == "RAW")
@@ -440,17 +465,19 @@ end
 
 function processFocusingAlgorithm()
     # make post window Match filter figure
-    mFilter() # matched filter the output 
-    IQ_bb()   # make baseband IQ data 
 
-    # DATA IS IN MF Stage IT NEEDS TO SEND ABSOULTE WAVEFORM 
-    dataMatrix = []
-    for i in rxArr
-        push!(dataMatrix, (i.wf))
+    if (rxArr[1].wfstage=="None")
+        outputRxAntennaWaveforms(rxArr,txArr,targetArr);
     end
 
-    rtm = focussingAlgorithm(dataMatrix);
-    image =imageProcessingAlgorithm(rtm);
+    mFilter() # matched filtere the output 
+    IQ_bb()   # make baseband IQ data 
+
+    # rtm = focussingAlgorithm(dataMatrix);
+    # image =imageProcessingAlgorithm(rtm);
+    # global image_ = image;
+
+    image = imageProcessing2(txArr,rxArr) 
     global image_ = image;
 
     println("END")
@@ -473,9 +500,9 @@ end
  #  _| |_ | |\  | _| |_    | |   
  # |_____||_| \_||_____|   |_|  
                             
-function initParams(cf,bw,sr,pt)
-    cf,bw,sr,pt = parse(Int,cf),parse(Int,bw),parse(Int,sr),parse(Int,pt)
-    vt=initializeSim(cf,bw,sr,pt);
+function initParams(cf,bw,sr,pt,sWind)
+    cf,bw,sr,pt,sw = parse(Int,cf),parse(Int,bw),parse(Int,sr),parse(Int,pt) , parse(Int,sWind)
+    vt=initializeSim(cf,bw,sr,pt,sw);
     return("Params Initialized")
 end
 
@@ -499,7 +526,7 @@ allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 recieveModel = ListModel(rxArr)
 
-@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot viewImage
+@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm mFilter IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot viewImage
 
 @qmlapp "radar.qml" startModel fileModel recieveModel
 exec()

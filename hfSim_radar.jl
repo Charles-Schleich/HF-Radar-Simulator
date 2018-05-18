@@ -16,11 +16,10 @@ myWindow(x)= rect(x).*cos.(x*pi).*cos.(x*pi)
 
 # Triangle Calculations.
 # calc 3rd side given s1 s2 and angle
-calcSide(s1,s2,a)= ( (s1^2+s2^2)-2*s1*s2*cosd(a) )^0.5
+calcSide(s1,s2,a)= ( (s1^2+s2^2) -2*s1*s2*cosd(a) )^0.5
 
 #calc angle given 3 sides.
-calcAngle(opposite,adj1,adj2)= acosd((opposite^2-adj1^2-adj2^2)/(-2*adj2*adj1))
-
+calcAngle(opposite,adj1,adj2)=acosd((opposite^2-adj1^2-adj2^2)/(-2*adj2*adj1))
 
  #  _____  _   _  _____  _______ 
  # |_   _|| \ | ||_   _||__   __|
@@ -30,7 +29,7 @@ calcAngle(opposite,adj1,adj2)= acosd((opposite^2-adj1^2-adj2^2)/(-2*adj2*adj1))
  # |_____||_| \_||_____|   |_|   
                               
 
-function initializeSim(centreF, bandW, sampleRate,pulseT)
+function initializeSim(centreF, bandW, sampleRate,pulseT, sW)
 
     # Constants 
     global c = 299792458;      # speed of wave through Medium (here its speed of light in air)
@@ -55,7 +54,7 @@ function initializeSim(centreF, bandW, sampleRate,pulseT)
     global  T = pulseT/(10^6)
     global  r_Blind =  (T*c)/2
     global  rangeRes =  c/(2*B)
-
+    global  sWind    = parse(Int,sW/2)
 
     global  K = B/T;    # Chirp rate
     global td = 0.6*T; # Chirp delay
@@ -80,19 +79,18 @@ function defaultSimParams()
     
     # Dependents
     global dt = 1/fs;  # This is the sample spacing
-    global t = 0:dt:t_max; # define a time vector containing the time values of the samples
-    global r = (c*t/2)/1000 ;  # range vector containing the range values of the samples . 
+    global t  = 0:dt:t_max; # define a time vector containing the time values of the samples
+    global r  = (c*t/2)/1000 ;  # range vector containing the range values of the samples . 
     
-    # global T = (2E-4); # Chirp pulse length
-    # global T = (1E-6); # Chirp pulse length
     global T = (100E-6); # Chirp pulse length
     # global T = (10E-6); # Chirp pulse length
 
-    global K = B/T;    # Chirp rate
+    global K  = B/T;    # Chirp rate
     global td = 0.6*T; #0.6*T; # Chirp delay
 
-    global  r_Blind =  (T*c)/2
+    global  r_Blind  =  (T*c)/2
     global  rangeRes =  c/(2*B)
+    global  sWind    = 20
 
     #Creating reference Pulse
     global v_tx = cos.( 2*pi*(f0*(t-td) + 0.5*K*(t-td).^2) ).*rect((t-td)/T);
@@ -173,8 +171,8 @@ end
 # This is made to create chirp waveforms similar to what would be recieved by 
 # an RX antenna
 function wavRaw(tx_Targ, rx_Targ) 
+    
     R1 = tx_Targ+rx_Targ
-
     if (tx_Targ > r_Blind) && (rx_Targ > r_Blind) 
         A1 = 1/R1^sf;
     else  
@@ -193,9 +191,6 @@ function matchedFilter(v_rx) # Distance is in meters
 
     V_TX= (fft(v_tx));
     V_RX= (fft(v_rx));
-    # Frequency Axes
-    N=length(t);
-    f_axes = ((fs*2)*(0:N-1)/N);# frequency axis
 
     # Matched Filtering
     H = conj(V_TX);
@@ -205,9 +200,6 @@ function matchedFilter(v_rx) # Distance is in meters
     scale = r.^sf
     v_mf=v_mf.*(scale)
 
-    # Window function
-    # V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
-    # v_mf_window= ifft(V_MF_Window)
 
     return(v_mf)
 end
@@ -215,7 +207,8 @@ end
 
 function basebandedIQdata(v_mf) # Distance is in meters
     V_MF = fft(v_mf)
-    V_ANALYTIC = 2*V_MF 
+    
+    V_ANALYTIC = 2*V_MF
     N = length(V_MF);
     V_ANALYTIC[floor(Int,N/2)+1:Int(N)] = 0;
     v_analytic = ifft(V_ANALYTIC)
@@ -397,48 +390,65 @@ end
 
 function focussingAlgorithm(wm)
 
-    wm2=hcat(wm...)';
+    global wm2=hcat(wm...)';
     
     (N_antennas,numSamples) = size(wm2);
-    distBetwAnennas= (freq_to_wavelen(f0))/2;
+    distBetwAnennas= 100*(freq_to_wavelen(f0))/2;
     
     global RthetaMatrix = [];
-    println("Begin Focussing");
-
+    # println("Begin Focussing");
+# 
     # rangeRes
     # use Range
     for i in 1:10:r_max  # Range ROWS
-        intermediate = [];
-
+        
         if((i-1)%20000==0)
             println( i/2000,"% ");
         end
 
+        intermediate = [];
+
         for j in -60:1:60 # Theta     Cols
             tref = (i + calcSide(i,distBetwAnennas,j))/c;  # Calc Every Time
+            # SampleLocation = tref/t_max
+
             vfoc = 0;
             for n in 1:N_antennas
+
                 xoffRef = n * distBetwAnennas;
-                td = calctimeDelay(i, j, xoffRef); # calculates total time delay
+                # td = calctimeDelay(i, j, xoffRef); # calculates total time delay
+
+                td = (i + calcSide(i, xoffRef,j))/c
                 tindex = td / t_max;
+                
+                # println(i," ", j, " ", xoffRef, " ", td*c )
+
+                # println(i," ", j, " ", n, " ", ceil(Int, numSamples* tindex )," ",floor(Int, numSamples* tindex ), " ", numSamples )
+                # if n==1 
+                # end
 
                 if tindex>1
-                    tindex=1
+                    vfoc = vfoc + 0;
+                else
+
+                    indexLocationtop = ceil(Int, numSamples* tindex );
+                    indexLocationbottom = floor(Int, numSamples* tindex);
+                    UpperSample = wm2[n,indexLocationtop]*exp(-im*2*pi*f0*(td-tref));
+                    lowerSample = wm2[n,indexLocationbottom]*exp(-im*2*pi*f0*(td-tref));
+                    vfoc = vfoc + mean([UpperSample,lowerSample])
+
                 end
-                #  probably a bad method (Going over the length of the array)
-
-                indexLocation = round(Int, numSamples* tindex );
-                vfoc = vfoc + wm2[n,indexLocation]*exp(-im*2*pi*f0*(td-tref));
-
             end # End antennas
             push!(intermediate,vfoc) ;
         end # End Cols
             push!(RthetaMatrix,intermediate);
     end
      println("End");
+
     # rtMatrix=hcat(RthetaMatrix...)'
-    println(length(RthetaMatrix))
-    println(length(RthetaMatrix[1]))
+    global glRTM = RthetaMatrix;
+    # println(length(RthetaMatrix))
+    # println(length(RthetaMatrix[1]))
 
     return(RthetaMatrix);
 end # End function
@@ -452,12 +462,12 @@ end # End function
  #                                                         __/ |      
  #                                                        |___/       
 ###############################
-dist(x,y) = sqrt( (x-(x_Res/2))^2 + (y-y_Res)^2 )
+# dist(x,y) = sqrt( (x-(x_Res/2))^2 + (y-y_Res)^2 )
 
-calcangle(x,y)= atand(y/x)
+# calcangle(x,y)= atand(y/x)
 ###############################
-function imageProcessingAlgorithm(rtmatrix)
 
+function imageProcessingAlgorithm(rtmatrix)
     println("--------------------------")
     dataArray=rtmatrix;
     global x_Res=1000
@@ -496,6 +506,7 @@ function imageProcessingAlgorithm(rtmatrix)
                 if (theta<0) # Negative Degrees i.e. First half of angle bins.
                     newtheta = -theta - 90; # convert from -30 -> -90 to -60 -> 0
                     arrIndex = newtheta + a_jumps; # length of subArray
+                    # println(arrIndex);
 
                     topTheta = ceil(Int,arrIndex);
                     bottomTheta= floor(Int,arrIndex);
@@ -531,7 +542,6 @@ function imageProcessingAlgorithm(rtmatrix)
         push!(imageArr,rowData);
         # println(y)
     end
-
     println("Finished Image Creation")
 
 ########################################################################
@@ -555,8 +565,137 @@ function imageProcessingAlgorithm(rtmatrix)
     return(imgArr)
 end
 
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+issubvec(v,big) = 
+  any([v == slice(big,i:(i+length(v)-1)) for i=1:(length(big)-length(v)+1)])
 
-calctimeDelay(Range, ang, xoffRef) = (Range + calcSide(Range, xoffRef,ang))/c
+dist(x1,y1,x2,y2) = sqrt( (x1-x2)^2 + (y1-y2)^2 )
+
+function imageProcessing2(txArr,rxArr)
+
+    # global wm2=hcat(wm...)';
+    numSamples = length(rxArr[1].wf)  
+    print("NumSamples ",numSamples)  
+    println("--------------------------")
+    global x_Res=2000
+    global y_Res=2000
+    global imageArr= [];
+    rangeBins = 200000/x_Res
+
+    txx = txArr[1].ex
+    txy = txArr[1].ey
+
+    imageArr = [] 
+    smallest=numSamples
+    largest=0
+
+    global indexesUsed=[]
+    for y in 1:y_Res
+        rowData = [];
+        if (y%100==0)
+            println(y/10)            
+        end
+        for x in 1:x_Res
+            curX= rangeBins*x 
+            curY= rangeBins*(y_Res-y)
+            rangeTx = dist(curX,curY,txx,txy)
+            foc=0;
+            for i in rxArr
+                rxx= i.ex 
+                rxy= i.ey 
+                rangeRx = dist(curX,curY,rxx,rxy)
+                twoWayRange = rangeRx + rangeTx
+
+                if twoWayRange>400000
+                    foc = foc +0
+                else 
+                    t_delay_2Way = (twoWayRange)/c
+                    tindex = t_delay_2Way/t_max
+                    topIndex = ceil(Int,tindex*numSamples)
+                    botIndex = floor(Int,tindex*numSamples)
+                    # print(botIndex," ", topIndex, " ", sWind )
+                    if botIndex>sWind
+                        bot =  sum(i.wf[botIndex-sWind:botIndex])
+                    else
+                        bot = i.wf[botIndex]
+                    end
+                    
+                    if topIndex<(numSamples-sWind)
+                        top =  sum(i.wf[topIndex:topIndex+sWind])
+                    else
+                        top = i.wf[topIndex]
+                    end
+
+                    # top = i.wf[topIndex]
+
+                    focRx = mean([top,bot])
+                    foc = foc + focRx
+                    # BLUURR IN RANGE
+
+                end
+            end # END RXs
+            push!(rowData,foc) 
+        end # END X
+            push!(imageArr,rowData) 
+    end # END Y
+    # SHOWIMAGE
+    
+    for i in 1:length(imageArr)
+        imageArr[i]= abs.(imageArr[i]);
+    end
+
+    global imgArr = hcat(imageArr...)';
+    currentMax = maximum(imgArr);
+    println(currentMax)
+    (rows,cols) = size(imgArr)
+
+    for i in 1:rows
+        for j in 1:cols
+            imgArr[i,j] = imgArr[i,j]/currentMax;
+        end
+    end
+    currentMax = maximum(imgArr);
+    println(sum(imgArr))
+
+    for i in 1:rows
+        for j in 1:cols
+            if imgArr[i,j] < currentMax*0.1
+                    imgArr[i,j] = 0
+            end        
+         end
+    end
+
+    println(sum(imgArr))
+    println(maximum(imgArr))
+
+
+    println("show")
+    figure();
+    imshow(imgArr);
+    tight_layout();
+
+    return(imgArr)
+end
+
+
+
 
 function testSinglePointFinder()
     # 45 Degree Example 
@@ -595,6 +734,39 @@ function testSinglePointFinder()
 
 end
 
+function analysis()
+    R1 = 100000
+    
+    A1 = 1/R1^sf;
+    td1 = R1/c;# R is the total delay to the target
+
+    #Chirp Signal
+    v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T);
+
+    V_TX= (fft(v_tx));
+    V_RX= (fft(v_rx));
+    # Frequency Axes
+    N=length(t);
+    f_axes = ((fs*2)*(0:N-1)/N);# frequency axis
+
+    # Matched Filtering
+    H = conj(V_TX);
+    V_MF  = H.*V_RX;
+    v_mf  = ifft(V_MF) 
+
+    scale = r.^sf
+    # v_mf=v_mf.*(scale)
+
+    # Window function
+    V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
+    v_mf_window= ifft(V_MF_Window)
+
+    figure()
+    # subplot(2,1,1)
+    plot(abs.(v_mf))
+    # subplot(2,1,2)
+    plot(abs.(v_mf_window))
+end
 
 
 # nice Scenarios

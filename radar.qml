@@ -10,8 +10,8 @@ ApplicationWindow {
     title: "High Frequency Radar Simulator"
     visible: true
     // width: 1100
-    width: 1200
-    height: 600
+    width: 1300
+    height: 700
     
     ListModel {
         id: emptyModel
@@ -26,8 +26,8 @@ ApplicationWindow {
                 spacing: 1
         Rectangle {
             id: layoutMap
-            height : 600
-            width  : 600
+            height : 700
+            width  : 700
             color  : "white"
 
             Repeater {// Repeat for each object
@@ -56,7 +56,7 @@ ApplicationWindow {
             border.width : 1
             border.color :  "light grey"
             // height : appRoot.height 
-            height: 400
+            height: 500
             width : 320
             
             ColumnLayout
@@ -118,7 +118,28 @@ ApplicationWindow {
                 }
                  Label { id:nAStar; color:"red"; text: "" }
             }
-            Label { id: distAntennas ; text: ""; color:"green" }
+
+            RowLayout {
+                Label { text: "Antenna Spacing Scale:      " }
+                TextField {
+                    id: antSS
+                    placeholderText: qsTr(" 1 -> 150 ")
+                    validator: IntValidator { bottom: 0; top: 150;}
+                }
+                 Label { id:aSSStar; color:"red"; text: "" }
+            }
+
+            RowLayout {
+                Label { text: "Summation Window:            " }
+                TextField {
+                    id: sWind
+                    placeholderText: qsTr(" 1 -> 150 ")
+                    validator: IntValidator { bottom: 0; top: 500;}
+                }
+                 Label { id:sWStar; color:"red"; text: "" }
+            }
+
+            // Label { id: .distAntennas ; text: ""; color:"green" }
 /////Simulation Paramaters
 
 /////RECIEVE ANTENNAS
@@ -162,7 +183,8 @@ ApplicationWindow {
                     var nACheck = false
                     var rXCheck = false
                     var rYCheck = false
-
+                    var antsCheck = false
+                    var sWindCheck = false
 
                     if (centreFreq.text==""){cfStar.text="*"}
                     else{cfStar.text=""; cfCheck=true;}
@@ -185,20 +207,27 @@ ApplicationWindow {
                     if (rxAntennaY.text==""){ryStar.text="*"}
                     else{ryStar.text=""; rYCheck=true;}
                     
+                    if (antSS.text==""){aSSStar.text="*"}
+                    else{aSSStar.text=""; antsCheck=true;}
+                    
+                    if (sWind.text==""){sWStar.text="*"}
+                    else{sWStar.text=""; sWindCheck=true;}
+                    
                     
                     // ACCEPTED
-                    if (cfCheck==true && bWCheck==true && sFCheck==true && nACheck==true && rXCheck==true && rYCheck==true && pTCheck==true) {
+                    if (cfCheck==true && bWCheck==true && sFCheck==true && nACheck==true && rXCheck==true && rYCheck==true && pTCheck==true && antsCheck && sWindCheck==true) {
                         
 
                         var br = Julia.calcBlind(pulseT.text);
-                        var antSpe = Julia.calcSpacing(centreFreq.text);
+                        var antSpe = Julia.calcSpacing(centreFreq.text,antSS.text);
                         blindRange.text = br
                         antennaspacing.text = antSpe
 
-                        var a = Julia.initParams(centreFreq.text,bandWidth.text,sampleR.text,pulseT.text)
-                        var b = Julia.addRxAntennas(rxAntennaX.text,rxAntennaY.text,noAntenna.text)
 
-                        infoSimParams.text = a
+                        var a = Julia.initParams(centreFreq.text,bandWidth.text,sampleR.text,pulseT.text,sWind.text)
+                        var b = Julia.addRxAntennas(rxAntennaX.text,rxAntennaY.text,noAntenna.text,antSS.text)
+
+                        infoSimParams.text = "Params Initialized"
                         infoSimParams.color = "Green"
                     }
                     else{
@@ -224,6 +253,8 @@ ApplicationWindow {
                 noAntenna.text  = 15
                 rxAntennaX.text = 100000
                 rxAntennaY.text = 5000
+                antSS.text      = 100
+                sWind.text      = 40
                 cfStar.text=""
                 bwStar.text=""
                 sfStar.text=""
@@ -233,14 +264,14 @@ ApplicationWindow {
                 ptStar.text=""
 
                 var br = Julia.calcBlind(pulseT.text);
-                var antSpe = Julia.calcSpacing(centreFreq.text);
+                var antSpe = Julia.calcSpacing(centreFreq.text,antSS.text);
                 blindRange.text = br
                 antennaspacing.text = antSpe
 
                 // var a = Julia.initParams(centreFreq.text,bandWidth.text,sampleR.text,pulseT.text)
                 var a = Julia.loadDefaults()
                 
-                var b = Julia.addRxAntennas(rxAntennaX.text,rxAntennaY.text,noAntenna.text)
+                var b = Julia.addRxAntennas(rxAntennaX.text,rxAntennaY.text,noAntenna.text,antSS.text)
 
                 infoSimParams.text = a
                 infoSimParams.color = "Green"
@@ -314,6 +345,22 @@ ApplicationWindow {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     Button {
+                text: " Matched Filter"
+                onClicked : {
+
+                    if(Julia.checkArrSimulate()==false){
+                    checkSim.color = "red";
+                    checkSim.text = "Cannot process: No WF"; 
+                    }
+                    else
+                    {
+                    Julia.mFilter()                   
+                    }
+                    
+                    }
+            }
+
+    Button {
                 text: "mk IQ data"
                 onClicked : {
 
@@ -384,8 +431,8 @@ ApplicationWindow {
                 }
             }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
         }
@@ -466,6 +513,24 @@ ApplicationWindow {
                         }
                     }
                 }
+                Button {
+                    text: "1Tar"
+                    onClicked : { 
+                        
+                        if (Julia.targetExists("100000", "100000")==true){
+                                infoTar.text = "Object exists at Coords"
+                                infoTar.color = "red"
+                            }
+                        else{
+                            var num = Julia.getElemNumber("TAR")
+                            var id= "TAR" + num
+                            Julia.addTarget("100000", "100000")
+                            infoTar.text = "Target Added"
+                            infoTar.color = "green"
+                            }
+                    }
+                }
+
                     Label { id: infoTar; text: "" }         
             }// End Add Target 
 
@@ -501,9 +566,11 @@ ApplicationWindow {
                             }
                             else
                             {
-                                Julia.saveScenario("scenarios/" + saveScenarioText.text)
                                 infoScene.text = "Saving..."
                                 infoScene.color = "green"
+                                Julia.saveScenario("scenarios/" + saveScenarioText.text)
+                                infoScene.text = "Saved"
+                                // infoScene.color = "green"
                             }
                         }
 
@@ -606,7 +673,6 @@ ApplicationWindow {
                     if(Julia.checkArrSimulate())
                     {
                         Julia.processFocusingAlgorithm()
-
                     }
                     else{
                         processInfo.text = "Can't Sim, Missing RX"
