@@ -77,9 +77,8 @@ function addRxAntennas(xCoord::String , yCoord::String, number::String, spacingS
     global rxArr = AntennaObject[]
     
     xTxlocation = xstart - hwl
-    println(xTxlocation)
 
-    addSingleTx(xTxlocation,y)
+    addSingleTx(x,y)
 
     for i in 1:(n)
         id = string(length(rxArr))
@@ -256,7 +255,7 @@ end
 
 function calcSpacing(centerFreq,scale)
     cf = parse(Int,centerFreq)
-    scle = parse(Int,scale)
+    scle = parse(Float64,scale)
 
     antennaSpacing = round((scle*(299792458/cf))/2,3)
 
@@ -302,29 +301,7 @@ function outputRxAntennaWaveforms(rxArray::Array{AntennaObject},txArray::Array{A
     end
      updateModel();
 end
-# SAVE ABS AND ANGLE VALUES IF THAT HELPS MAYBE YES ?
 
-function SimRangeFinder()
-    println("---")
-    makePostMFWaveforms(rxArr,txArr,targetArr)
-end
-
-function makePostMFWaveforms(rxArray::Array{AntennaObject},txArray::Array{AntennaObject}, targetArray::Array{AntennaObject})
-    transmittAntenna=txArray[1]
-    dispWf=zeros(t)
-    for i in (rxArray)
-        summedWaveform = zeros(t)
-        for j in (targetArray)
-            txToTarg = calcDist(transmittAntenna,j);
-            rxToTarg = calcDist(i,j);
-            waveform = wavAtDist_AfterMF(txToTarg + rxToTarg);
-            summedWaveform=summedWaveform+ abs.(waveform)
-        end
-        i.wf = summedWaveform
-        # dispWf = dispWf+summedWaveform
-    end
-    updateModel();
-end
 # SAVE ABS AND ANGLE VALUES IF THAT HELPS MAYBE YES ?
 
 function tunnelPrint(variable)
@@ -365,7 +342,7 @@ end
 #  VIEW WAVEFORMS
 
 function showRXWaveform(rxNum)
-    print(rxNum)
+
     close("all")
     figure("Recieve Antenna Waveform")
     title_ = string("Recieve Antenna ", rxNum+1," Waveform")
@@ -382,7 +359,7 @@ end
 
 function showAbsRXWaveform(rxNum)
     close("all")
-    print(rxNum)
+
     figure("Abs of RX")
     title_ = string("Recieve Antenna", rxNum+1,"Wavform")
     title(title_)
@@ -396,20 +373,21 @@ end
 
 function viewPhase(rxNum)
     close("all")
-    print(rxNum)
+
     figure("Phase of RX")
     title_ = string("Recieve Antenna", rxNum+1,"Wavform")
     title(title_)
     xlabel("Range")
     ylabel("Amplitude")
-    plot(r, angle.(rxArr[rxNum+1].wf))
-end
+    for rx in (rxArr)
+        plot(r, angle.(rx.wf))
+    end
 
+end
 
 function clearplot()
     close("all")
 end
-
 
  #   _____  _____   ______  
  #  / ____||  __ \ |  ____| 
@@ -473,12 +451,23 @@ function processFocusingAlgorithm()
     mFilter() # matched filtere the output 
     IQ_bb()   # make baseband IQ data 
 
-    # rtm = focussingAlgorithm(dataMatrix);
-    # image =imageProcessingAlgorithm(rtm);
-    # global image_ = image;
+    dataMatrix = []
+    for i in rxArr
+        push!(dataMatrix, (i.wf))
+    end
 
-    image = imageProcessing2(txArr,rxArr) 
+    # FIRST METHOD
+    rtm = focussingAlgorithm(txArr,rxArr);
+
+    # image =imageProcessingAlgorithm(rtm);
+    image =imaging2(rtm);
+    
     global image_ = image;
+
+
+    # SECOND METHOD
+    # image = imageProcessing2(txArr,rxArr) 
+    # global image_ = image;
 
     println("END")
 end
@@ -526,7 +515,7 @@ allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 recieveModel = ListModel(rxArr)
 
-@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames SimRangeFinder loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm mFilter IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot viewImage
+@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm mFilter IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot viewImage
 
 @qmlapp "radar.qml" startModel fileModel recieveModel
 exec()

@@ -3,8 +3,6 @@
 
 # import ImageView
 # import Images
-
-
 # using Plots
 # pyplot()
 using PyPlot
@@ -54,17 +52,19 @@ function initializeSim(centreF, bandW, sampleRate,pulseT, sW)
     global  T = pulseT/(10^6)
     global  r_Blind =  (T*c)/2
     global  rangeRes =  c/(2*B)
-    global  sWind    = parse(Int,sW/2)
+    global  sWind    = ceil(Int,sW/2)
 
     global  K = B/T;    # Chirp rate
     global td = 0.6*T; # Chirp delay
+
 
     global v_tx = cos.( 2*pi*(f0*(t-td) + 0.5*K*(t-td).^2) ).*rect((t-td)/T);
 end
 
 
-function defaultSimParams()
 
+
+function defaultSimParams()
     # Constants 
     global c = 299792458;      # speed of wave through Medium (here its speed of light in air)
     global sf = 2 ;            # distance Scaling Factor
@@ -74,7 +74,8 @@ function defaultSimParams()
     # Variables
     global f0 = 4E6; # Center frequency 
     global B  = 2E6; # Chirp bandwidth
-    global fs =  30E6; # This is the sample rate required for 30MHz.
+    global fs = 30E6; # This is the sample rate required for 30MHz.
+     # global fs =  300E6; # This is the sample rate required for 30MHz.
     # global fs =  600E6; # This is the sample rate required for 30MHz.
     
     # Dependents
@@ -97,15 +98,12 @@ function defaultSimParams()
 
 end
 
-
  # __          __  __      __ ______      _____  _____   ______         _______  _____  ____   _   _ 
  # \ \        / //\\ \    / /|  ____|    / ____||  __ \ |  ____|    /\ |__   __||_   _|/ __ \ | \ | |
  #  \ \  /\  / //  \\ \  / / | |__      | |     | |__) || |__      /  \   | |     | | | |  | ||  \| |
  #   \ \/  \/ // /\ \\ \/ /  |  __|     | |     |  _  / |  __|    / /\ \  | |     | | | |  | || . ` |
  #    \  /\  // ____ \\  /   | |____    | |____ | | \ \ | |____  / ____ \ | |    _| |_| |__| || |\  |
  #     \/  \//_/    \_\\/    |______|    \_____||_|  \_\|______|/_/    \_\|_|   |_____|\____/ |_| \_|
-
-
 
 # This function creates a waveform that gets processed through a matched  filter
 # then gets turned into an analytic signal and pushed down to base band.
@@ -140,33 +138,6 @@ function waveformAtDistance(distance)
     return(v_analytic)
 end
 
-
-function wavAtDist_AfterMF(distance) # Distance is in meters
-    R1 = floor(Int,distance)
-    td1 = R1/c;# R is the total delay to the target
-    A1 = 1/R1^sf;
-    #Chirp Signal
-    v_rx = A1*cos.( 2*pi*(f0*(t-td-td1) + 0.5*K*(t-td-td1).^2) ).*rect((t-td-td1)/T);
-
-    #FFT of Chirp
-    V_TX= (fft(v_tx));
-    V_RX= (fft(v_rx));
-
-    # Frequency Axes
-    N=length(t);
-    f_axes = ((fs*2)*(0:N-1)/N);# frequency axis
-
-    # Matched Filtering
-    H = conj(V_TX);
-    V_MF  = H.*V_RX;
-    v_mf  = ifft(V_MF)
-
-    # Window function
-    V_MF_Window = V_MF.*myWindow((f_axes-f0)/B)
-    v_mf  = ifft(V_MF)
-    v_mf_window= ifft(V_MF_Window)
-    return(v_mf_window)
-end
 
 # This is made to create chirp waveforms similar to what would be recieved by 
 # an RX antenna
@@ -309,11 +280,6 @@ end
 
 function calculateIncommingAngle(sigA_bb,sigB_bb)
 
-    # V_ANALYTIC = 2*V_MF 
-    # N = length(V_MF);
-    # V_ANALYTIC[floor(Int,N/2)+1:Int(N)] = 0;
-    # v_analytic = ifft(V_ANALYTIC)
-
     # Separate baseband and angle waveforms 
     scale = r.^sf
     sigA_bb_scaled , sigB_bb_scaled = abs.(sigA_bb.*(scale)),abs.(sigB_bb.*(scale))
@@ -321,6 +287,7 @@ function calculateIncommingAngle(sigA_bb,sigB_bb)
     #Find peaks
     sigA_peaks = findPeaks(sigA_bb_scaled)
     sigB_peaks = findPeaks(sigB_bb_scaled)
+
 
     # Wavelength at centre Frequency
     wl = (ceil(Int,freq_to_wavelen(f0)))
@@ -358,14 +325,15 @@ function calculateIncommingAngle(sigA_bb,sigB_bb)
 
   
     if (distA>distB)
-        #use Internal Angle 
-        println("-- Angle: ", angleDept_intRad ," +-3 degrees")
+        #use Internal Angle
+        println(angleDept_intRad)
+        println("Angle: ", angleDept_intRad ," +-3 degrees")
         xCoord = distA*sind(angleDept_intRad);
         yCoord = distA*cosd(angleDept_intRad);
         println("x: ",xCoord,"\ny: ",yCoord) 
     else
         # use Ext angle
-        println("-- Angle: ", angleDept_extRad, " +-3 degrees")
+        println("--Angle: ", angleDept_extRad, " +-3 degrees")
         xCoord = distA*sind(90-angleDept_intRad);
         yCoord = distA*cosd(90-angleDept_intRad);
         println("x: ",-xCoord,"\ny: ",yCoord) 
@@ -373,10 +341,44 @@ function calculateIncommingAngle(sigA_bb,sigB_bb)
 
 end
 
+
+
+
+function calculateIncommingAngle2(sigA_bb,sigB_bb)
+
+    # Separate baseband and angle waveforms 
+    figure()
+    plot(sigA_bb)
+    plot(sigB_bb)
+
+    # scale = r.^sf
+    # sigA_bb_scaled , sigB_bb_scaled = abs.(sigA_bb.*(scale)),abs.(sigB_bb.*(scale))
+    # sigA_bb_angle , sigB_bb_angle = angle.(sigA_bb),angle.(sigB_bb)
+    # #Find peaks
+    # sigA_peaks = findPeaks(sigA_bb_scaled)
+    # sigB_peaks = findPeaks(sigB_bb_scaled)
+
+
+    # # Wavelength at centre Frequency
+    # wl = (ceil(Int,freq_to_wavelen(f0)))
+
+    # totalSamples = length(t)
+
+    # # distances to first peak
+    # distA = r_max*sigA_peaks[1]/totalSamples
+    # distB = r_max*sigB_peaks[1]/totalSamples
+
+    # # Phases 
+    # phaseA = findPhases(sigA_bb_angle,sigA_peaks)
+    # phaseB = findPhases(sigB_bb_angle,sigB_peaks)
+
+end
+
+
 function fromDistCalc(dist1,dist2)
     sigA_bb = waveformAtDistance(dist1) 
     sigB_bb = waveformAtDistance(dist2)
-    calculateIncommingAngle(sigA_bb,sigB_bb)
+    calculateIncommingAngle2(sigA_bb,sigB_bb)
 end
 
  #  ______                        _                           _                      _  _    _                
@@ -388,19 +390,26 @@ end
  #                                           __/ |                __/ |                                       
  #                                          |___/                |___/                                        
 
-function focussingAlgorithm(wm)
+# dist2(x1,y1,x2,y2) = sqrt( (x1-x2)^2 + (y1-y2)^2 )
+# calcSide(s1,s2,a)= ( (s1^2+s2^2) -2*s1*s2*cosd(a) )^0.5
+function focussingAlgorithm(txArr,rxArr)
 
-    global wm2=hcat(wm...)';
-    
-    (N_antennas,numSamples) = size(wm2);
-    distBetwAnennas= 100*(freq_to_wavelen(f0))/2;
+    numSamples = length(rxArr[1].wf)  
+    N_antennas = length(rxArr)  
+    firstAntenna = rxArr[1]
+    lastAntenna  = rxArr[length(rxArr)]
+
+    centerx = (lastAntenna.ex + firstAntenna.ex)/2
+    centery = (lastAntenna.ey + firstAntenna.ey)/2
+
+    println(centerx ," ---- ", centery)
+
+    distBetwAnennas = (freq_to_wavelen(f0))/2;
     
     global RthetaMatrix = [];
-    # println("Begin Focussing");
-# 
     # rangeRes
     # use Range
-    for i in 1:10:r_max  # Range ROWS
+    for i in 90000:10:100000  # Range ROWS
         
         if((i-1)%20000==0)
             println( i/2000,"% ");
@@ -409,35 +418,41 @@ function focussingAlgorithm(wm)
         intermediate = [];
 
         for j in -60:1:60 # Theta     Cols
-            tref = (i + calcSide(i,distBetwAnennas,j))/c;  # Calc Every Time
-            # SampleLocation = tref/t_max
 
+            tref = (2*i)/c;  # Calc Every Time
+
+            # SampleLocation = tref/t_max
             vfoc = 0;
+
             for n in 1:N_antennas
 
                 xoffRef = n * distBetwAnennas;
                 # td = calctimeDelay(i, j, xoffRef); # calculates total time delay
+                # td = (i + calcSide(i, xoffRef,j))/c
+                exn=rxArr[n].ex
+                eyn=rxArr[n].ey
 
-                td = (i + calcSide(i, xoffRef,j))/c
+                a2rp = dist2(exn,eyn,centerx,centery); # dist Antenna to ref point
+                r_Antenna_focalpoint = calcSide(a2rp ,i, 90-j)
+
+                td = (i + r_Antenna_focalpoint)/c
                 tindex = td / t_max;
-                
-                # println(i," ", j, " ", xoffRef, " ", td*c )
-
-                # println(i," ", j, " ", n, " ", ceil(Int, numSamples* tindex )," ",floor(Int, numSamples* tindex ), " ", numSamples )
-                # if n==1 
-                # end
 
                 if tindex>1
                     vfoc = vfoc + 0;
                 else
+                    indexLocation = ceil(Int, numSamples* tindex );
+                    UpperSample = (rxArr[n].wf)[indexLocation]*exp(-im*2*pi*f0*(td-tref));
+                    vfoc = vfoc + UpperSample;
 
-                    indexLocationtop = ceil(Int, numSamples* tindex );
-                    indexLocationbottom = floor(Int, numSamples* tindex);
-                    UpperSample = wm2[n,indexLocationtop]*exp(-im*2*pi*f0*(td-tref));
-                    lowerSample = wm2[n,indexLocationbottom]*exp(-im*2*pi*f0*(td-tref));
-                    vfoc = vfoc + mean([UpperSample,lowerSample])
+                    # indexLocationtop = ceil(Int, numSamples* tindex );
+                    # indexLocationbottom = floor(Int, numSamples* tindex);
+                    # UpperSample = wm2[n,indexLocationtop]*exp(-im*2*pi*f0*(td-tref));
+                    # lowerSample = wm2[n,indexLocationbottom]*exp(-im*2*pi*f0*(td-tref));
+                    # vfoc = vfoc + mean([UpperSample,lowerSample])
 
                 end
+
             end # End antennas
             push!(intermediate,vfoc) ;
         end # End Cols
@@ -445,12 +460,27 @@ function focussingAlgorithm(wm)
     end
      println("End");
 
-    # rtMatrix=hcat(RthetaMatrix...)'
     global glRTM = RthetaMatrix;
-    # println(length(RthetaMatrix))
-    # println(length(RthetaMatrix[1]))
 
-    return(RthetaMatrix);
+    rtMatrix=hcat(RthetaMatrix...)'
+
+    println("show")
+    global imgArrRTheta = abs.(rtMatrix);
+
+    figure();
+    imshow(imgArrRTheta);
+    title("R-Theta Matrix");  
+    tight_layout();  
+
+    a = fft(imgArrRTheta)
+    b = abs.(a)
+
+    figure();
+    imshow(fftshift(b));
+    title("R-Theta Matrix FFT");  
+    tight_layout();  
+
+    return(rtMatrix);
 end # End function
 
  #                    _           _____                                
@@ -462,10 +492,10 @@ end # End function
  #                                                         __/ |      
  #                                                        |___/       
 ###############################
-# dist(x,y) = sqrt( (x-(x_Res/2))^2 + (y-y_Res)^2 )
 
-# calcangle(x,y)= atand(y/x)
-###############################
+
+dist(x,y) = sqrt( (x-(x_Res/2))^2 + (y-y_Res)^2 )
+calcangle(x,y)= atand(y/x)
 
 function imageProcessingAlgorithm(rtmatrix)
     println("--------------------------")
@@ -482,11 +512,13 @@ function imageProcessingAlgorithm(rtmatrix)
     println("A bins: ",a_bins)
     println("r jumps: ",r_jumps)
     println("a jumps: ",a_jumps)
+
 ########################################################################
     global imageArr= [];
     for y in 1:y_Res
         rowData = [];
         for x in 1:x_Res
+            foc=0; 
 
             if(x==(x_Res/2) && y == (y_Res))
                 theta = 90;
@@ -500,18 +532,22 @@ function imageProcessingAlgorithm(rtmatrix)
                 range_=1
             end
 
+
             if (range_>20000) ||  ( ( theta < 30) && (theta > -30))# No Data Region 
                 foc=0; 
             else
                 if (theta<0) # Negative Degrees i.e. First half of angle bins.
                     newtheta = -theta - 90; # convert from -30 -> -90 to -60 -> 0
                     arrIndex = newtheta + a_jumps; # length of subArray
-                    # println(arrIndex);
 
                     topTheta = ceil(Int,arrIndex);
                     bottomTheta= floor(Int,arrIndex);
                     topR   = ceil(Int,range_);
                     bottomR= floor(Int,range_);
+
+                    println()
+                    println(topR, " ",bottomR, " " ,topTheta," ",bottomTheta)
+                    break
 
                     foc1 = dataArray[topR][topTheta];
                     foc2 = dataArray[topR][bottomTheta];
@@ -536,57 +572,126 @@ function imageProcessingAlgorithm(rtmatrix)
 
                     foc=sum([foc1,foc2,foc3,foc4]);
                 end
+                break
             end
+            break
             push!(rowData, foc);    
         end
+        break
         push!(imageArr,rowData);
         # println(y)
     end
     println("Finished Image Creation")
 
-########################################################################
-
-    currentMax = 0;
-    for i in 1:length(imageArr)
-        imageArr[i]= abs.(imageArr[i]);
-        currentMax = maximum(imageArr[i]);
-    end
-
-    for i in 1:length(imageArr)
-        imageArr[i] = (imageArr[i])/currentMax;
-    end
+    imageArr = hcat(imageArr...)';
+    imgArr = abs.(imageArr)
 
     println("show")
-    global imgArr = hcat(imageArr...)';
+    # global imgArr = hcat(imageArr...)';
     figure();
     imshow(imgArr);
+    imshow(imgArr);
+
+
     tight_layout();    
     println("shown")
     return(imgArr)
 end
 
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-issubvec(v,big) = 
-  any([v == slice(big,i:(i+length(v)-1)) for i=1:(length(big)-length(v)+1)])
 
-dist(x1,y1,x2,y2) = sqrt( (x1-x2)^2 + (y1-y2)^2 )
+
+
+
+function imaging2(rtheta)
+    (rNum,aNum) = size(rtheta)
+    global x_Res=1000
+    global y_Res=1000
+
+    maxrange=1000
+    a_jumps= ceil(Int,aNum/2) 
+
+    imageData = []
+    for y in 1:y_Res
+        rowData = [];
+        for x in 1:x_Res
+        foc=0
+
+            if(x==(x_Res/2) && y == (y_Res))
+                theta = 90;
+            else
+                theta = calcangle(x-(x_Res/2),(y_Res)-y);
+            end
+
+            range_= (dist2(x,y,500,1000));
+
+            if range_ <= maxrange && y<712
+                range_ = rNum*range_/maxrange
+
+                if (theta<0) # Negative Degrees i.e. First half of angle bins.
+                    newtheta = -theta - 90; # convert from -30 -> -90 to -60 -> 0
+                    newNewtheta = newtheta + a_jumps; # length of subArray
+
+                    thetaArrIndex = ceil(Int,newNewtheta);
+                    rangeIndex= ceil(Int,range_);
+                    # println("a ",x, " ",y, " ",rangeIndex," ", thetaArrIndex )
+                   
+                    foc = rtheta[rangeIndex,thetaArrIndex];
+
+                else        #Positive Degrees  Second half of angle bings
+                    newtheta = -theta + 90; # convert from 90 -> 30 to 0 -> 60
+                    newNewtheta = newtheta + a_jumps; 
+
+                    thetaArrIndex = ceil(Int,newNewtheta);
+                    rangeIndex= ceil(Int,range_);
+                    # println("b ", x, " ",y, " ",rangeIndex," ", thetaArrIndex )
+
+                    foc = rtheta[rangeIndex,thetaArrIndex];
+
+                end
+            else
+                foc=0
+            end
+
+
+        push!(rowData, foc);  
+        end # End x loop
+    push!(imageData,rowData);  
+    end #end y loop
+
+    imageArr = hcat(imageData...)';
+    imgArrScene = abs.(imageArr)
+    
+    println("show")
+
+    figure();
+    imshow(imgArrScene);
+    tight_layout();    
+    println("shown")
+    return(imgArrScene)
+
+end #end function
+
+
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+####################################
+
+dist2(x1,y1,x2,y2) = sqrt( (x1-x2)^2 + (y1-y2)^2 )
 
 function imageProcessing2(txArr,rxArr)
 
@@ -594,8 +699,8 @@ function imageProcessing2(txArr,rxArr)
     numSamples = length(rxArr[1].wf)  
     print("NumSamples ",numSamples)  
     println("--------------------------")
-    global x_Res=2000
-    global y_Res=2000
+    global x_Res=1000
+    global y_Res=1000
     global imageArr= [];
     rangeBins = 200000/x_Res
 
@@ -615,12 +720,12 @@ function imageProcessing2(txArr,rxArr)
         for x in 1:x_Res
             curX= rangeBins*x 
             curY= rangeBins*(y_Res-y)
-            rangeTx = dist(curX,curY,txx,txy)
+            rangeTx = dist2(curX,curY,txx,txy)
             foc=0;
             for i in rxArr
                 rxx= i.ex 
                 rxy= i.ey 
-                rangeRx = dist(curX,curY,rxx,rxy)
+                rangeRx = dist2(curX,curY,rxx,rxy)
                 twoWayRange = rangeRx + rangeTx
 
                 if twoWayRange>400000
@@ -663,7 +768,7 @@ function imageProcessing2(txArr,rxArr)
 
     global imgArr = hcat(imageArr...)';
     currentMax = maximum(imgArr);
-    println(currentMax)
+
     (rows,cols) = size(imgArr)
 
     for i in 1:rows
@@ -672,7 +777,7 @@ function imageProcessing2(txArr,rxArr)
         end
     end
     currentMax = maximum(imgArr);
-    println(sum(imgArr))
+
 
     for i in 1:rows
         for j in 1:cols
@@ -681,10 +786,6 @@ function imageProcessing2(txArr,rxArr)
             end        
          end
     end
-
-    println(sum(imgArr))
-    println(maximum(imgArr))
-
 
     println("show")
     figure();
@@ -699,13 +800,22 @@ end
 
 function testSinglePointFinder()
     # 45 Degree Example 
+    # println("45 Deg \n----------")
+    # dist1 = 100026.1667449112 + 100000
+    # dist2 = 100026.1667449112 + 99973.50535169283
+    # fromDistCalc(dist1,dist2)
+
+    # 45 Degree Example 
+
+    # initializeSim(4E6, 2E6, 300E6,(100E-6), 20);
+    defaultSimParams();
     println("45 Deg \n----------")
-    dist1 = 100026.1667449112 + 100000
-    dist2 = 100026.1667449112 + 99973.8404724917
+    dist1 = 100026.50166983239 + 100000
+    dist2 = 100026.50166983239 + 99973.50535169283
     fromDistCalc(dist1,dist2)
 
+    # 30 Degree Example working
     # println("\n30 Deg \n----------")
-    # # 30 Degree Example working
     # dist1 = 100032.04465064185 + 100000
     # dist2 = 100032.04465064185 + 99967.9582
     # fromDistCalc(dist1,dist2)

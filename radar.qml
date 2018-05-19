@@ -56,7 +56,7 @@ ApplicationWindow {
             border.width : 1
             border.color :  "light grey"
             // height : appRoot.height 
-            height: 500
+            height: 450
             width : 320
             
             ColumnLayout
@@ -123,9 +123,12 @@ ApplicationWindow {
                 Label { text: "Antenna Spacing Scale:      " }
                 TextField {
                     id: antSS
-                    placeholderText: qsTr(" 1 -> 150 ")
-                    validator: IntValidator { bottom: 0; top: 150;}
+                    placeholderText: qsTr(" 0 -> 150 ")
+                    // validator: IntValidator { bottom: 0; top: 150;}
+                    // validator: DoubleValidator { bottom: 0; top: 150;}
+
                 }
+
                  Label { id:aSSStar; color:"red"; text: "" }
             }
 
@@ -139,7 +142,6 @@ ApplicationWindow {
                  Label { id:sWStar; color:"red"; text: "" }
             }
 
-            // Label { id: .distAntennas ; text: ""; color:"green" }
 /////Simulation Paramaters
 
 /////RECIEVE ANTENNAS
@@ -253,7 +255,7 @@ ApplicationWindow {
                 noAntenna.text  = 15
                 rxAntennaX.text = 100000
                 rxAntennaY.text = 5000
-                antSS.text      = 100
+                antSS.text      = 1
                 sWind.text      = 40
                 cfStar.text=""
                 bwStar.text=""
@@ -262,6 +264,9 @@ ApplicationWindow {
                 rxStar.text=""
                 ryStar.text=""
                 ptStar.text=""
+                aSSStar.text=""
+                sWStar.text=""
+
 
                 var br = Julia.calcBlind(pulseT.text);
                 var antSpe = Julia.calcSpacing(centreFreq.text,antSS.text);
@@ -290,7 +295,7 @@ ApplicationWindow {
     Rectangle {
         id: rect12
         color : "white"
-        height : 200
+        height : 250
         width : 320
 
         ColumnLayout{
