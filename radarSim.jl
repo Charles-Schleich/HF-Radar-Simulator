@@ -486,18 +486,29 @@ function processIntersectionAlgorithm()
 
 end
 
-
-
-function viewImage()
-    if image_!=[]
+function viewImageFA()
+    if image_FA!=[]
         figure();
-        imshow(image_);
+        imshow(image_FA);
         tight_layout();
         return(1)
     else
         return(0)
     end
 end
+
+
+function viewImageIA()
+    if image_IA!=[]
+        figure();
+        imshow(image_FA);
+        tight_layout();
+        return(1)
+    else
+        return(0)
+    end
+end
+
  #  _____  _   _  _____  _______ 
  # |_   _|| \ | ||_   _||__   __|
  #   | |  |  \| |  | |     | |   
@@ -531,7 +542,7 @@ allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 recieveModel = ListModel(rxArr)
 
-@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm mFilter IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot viewImage clearTargets processIntersectionAlgorithm
+@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm mFilter IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot viewImageFA viewImageIA clearTargets processIntersectionAlgorithm
 
 @qmlapp "radar.qml" startModel fileModel recieveModel
 exec()

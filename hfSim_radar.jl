@@ -72,6 +72,7 @@ function defaultSimParams()
     global t_max = 2*r_max/c;  # Time delay to max range
 
     # Variables
+    # global f0 = 4E6; # Center frequency 
     global f0 = 4E6; # Center frequency 
     global B  = 2E6; # Chirp bandwidth
     global fs = 30E6; # This is the sample rate required for 30MHz.
@@ -408,15 +409,15 @@ function focusingAlgorithm(txArr,rxArr)
     global RthetaMatrix = [];
     # rangeRes
     # use Range
-    # for i in 1:10:200000  # Range ROWS
-    for i in 90000:10:100000  # Range ROWS
+    for i in 1:10:200000  # Range ROWS
+    # for i in 80000:10:110000  # Range ROWS
 
         if((i-1)%20000==0)
             println( i/2000,"% ");
         end
 
         intermediate = [];
-
+        # for j in -90:1:90 # Theta     Cols
         for j in -60:1:60 # Theta     Cols
 
             tref = (2*i)/c;  # Calc Every Time
@@ -446,12 +447,6 @@ function focusingAlgorithm(txArr,rxArr)
 
                     vfoc = vfoc + UpperSample;
 
-                    # indexLocationtop = ceil(Int, numSamples* tindex );
-                    # indexLocationbottom = floor(Int, numSamples* tindex);
-                    # UpperSample = wm2[n,indexLocationtop]*exp(-im*2*pi*f0*(td-tref));
-                    # lowerSample = wm2[n,indexLocationbottom]*exp(-im*2*pi*f0*(td-tref));
-                    # vfoc = vfoc + mean([UpperSample,lowerSample])
-
                 end
 
             end # End antennas
@@ -470,16 +465,17 @@ function focusingAlgorithm(txArr,rxArr)
 
     figure();
     imshow(imgArrRTheta);
-    title("R-Theta Matrix");  
+    title("R-Theta Matrix");
     tight_layout();  
 
-    a = fft(imgArrRTheta)
-    b = abs.(a)
 
-    figure();
-    imshow(fftshift(b));
-    title("R-Theta Matrix FFT");  
-    tight_layout();  
+
+    # a = fft(imgArrRTheta)
+    # b = abs.(a)
+    # figure();
+    # imshow(fftshift(b));
+    # title("R-Theta Matrix FFT");  
+    # tight_layout();  
 
     return(rtMatrix);
 end # End function
@@ -620,8 +616,7 @@ function imageProcessing2(txArr,rxArr)
     txy = txArr[1].ey
 
     imageArr = [] 
-    smallest=numSamples
-    largest=0
+
 
     global indexesUsed=[]
     for y in 1:y_Res
@@ -647,20 +642,31 @@ function imageProcessing2(txArr,rxArr)
                     tindex = t_delay_2Way/t_max
                     topIndex = ceil(Int,tindex*numSamples)
                     botIndex = floor(Int,tindex*numSamples)
-                    # print(botIndex," ", topIndex, " ", sWind )
-                    if botIndex>sWind
-                        bot =  sum(i.wf[botIndex-sWind:botIndex])
-                    else
-                        bot = i.wf[botIndex]
-                    end
+                    # println(botIndex," ", topIndex, " ", sWind )
+
+                    # if botIndex>sWind
+                    #     bot =  sum(i.wf[botIndex-sWind:botIndex])
+                    # else
+                    #     bot = i.wf[botIndex]
+                    # end
                     
-                    if topIndex<(numSamples-sWind)
-                        top =  sum(i.wf[topIndex:topIndex+sWind])
-                    else
+                    # if topIndex<(numSamples-sWind)
+                    #     top =  sum(i.wf[topIndex:topIndex+sWind])
+                    # else
+                    #     top = i.wf[topIndex]
+                    # end
+
+                    # println(x," ",y," ",topIndex," ",numSamples)
+                    if (topIndex>=1)
                         top = i.wf[topIndex]
-                    end
-                    focRx = mean([top,bot])
-                    foc = foc + focRx
+                        focRx = mean([top])
+                        foc = foc + focRx
+                    else
+                        foc = foc+0
+                    end 
+                        
+                    # focRx = mean([top,bot])
+
                     # BLUURR IN RANGE
                 end
             end # END RXs
@@ -674,26 +680,27 @@ function imageProcessing2(txArr,rxArr)
     # imgArrScene = abs.(imageArr)
     
     global imgArr = hcat(imageArr...)';
-    imageArr = abs.(imageArr)
+    println(size(imgArr))
+    imgArr = abs.(imgArr)
     currentMax = maximum(imgArr);
     (rows,cols) = size(imgArr)
 
 
-    for i in 1:rows
-        for j in 1:cols
-            imgArr[i,j] = imgArr[i,j]/currentMax;
-        end
-    end
+    # for i in 1:rows
+    #     for j in 1:cols
+    #         imgArr[i,j] = imgArr[i,j]/currentMax;
+    #     end
+    # end
 
-    currentMax = maximum(imgArr);
+    # currentMax = maximum(imgArr);
 
-    for i in 1:rows
-        for j in 1:cols
-            if imgArr[i,j] < currentMax*0.1
-                    imgArr[i,j] = 0
-            end        
-         end
-    end
+    # for i in 1:rows
+    #     for j in 1:cols
+    #         if imgArr[i,j] < currentMax*0.1
+    #                 imgArr[i,j] = 0
+    #         end        
+    #      end
+    # end
 
     println("show")
     figure();

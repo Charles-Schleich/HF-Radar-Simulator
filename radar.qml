@@ -39,8 +39,8 @@ ApplicationWindow {
                         color: colour
                         x: layoutMap.width*ex/200000
                         y: layoutMap.height*(1-ey/200000)
-                        width :5
-                        height:5
+                        width :10
+                        height:10
 
                     }
 
@@ -249,7 +249,7 @@ ApplicationWindow {
                 // infoSimParams.text = a
             // # Variables
                 centreFreq.text = 4000000
-                bandWidth.text  = 4000000
+                bandWidth.text  = 2000000
                 sampleR.text    = 30000000
                 pulseT.text     = 100
                 noAntenna.text  = 15
@@ -712,12 +712,29 @@ ApplicationWindow {
                 }
         }
 
+                    Label { id: nada; text: "" }
         
         Button {
-                text: "View Image"
+                text: "View Image Focusing Algorithm"
                 onClicked : { 
 
-                    if(Julia.viewImage()==1)
+                    if(Julia.viewImageFA()==1)
+                    {
+                        processInfo.text = "ImageLoaded"
+                        processInfo.color = "Green"
+                    }
+                    else{
+                        processInfo.text = "No image processed."
+                        processInfo.color = "red"
+                    }
+                }
+        }
+
+        Button {
+                text: "View Image Intersection Algorithm"
+                onClicked : { 
+
+                    if(Julia.viewImageIA()==1)
                     {
                         processInfo.text = "ImageLoaded"
                         processInfo.color = "Green"
@@ -730,7 +747,8 @@ ApplicationWindow {
         }
 
 
-                    Label { id: processInfo; text: "100" }
+
+                    Label { id: processInfo; text: "" }
         } //End column Layout
     } // End rect2
 
@@ -754,3 +772,6 @@ ApplicationWindow {
     }// id: rlayout BEGIN
 
 } // end appRoot
+
+
+
