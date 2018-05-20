@@ -519,7 +519,7 @@ ApplicationWindow {
                     }
                 }
                 Button {
-                    text: "1Tar"
+                    text: "1 Target"
                     onClicked : { 
                         
                         if (Julia.targetExists("100000", "100000")==true){
@@ -535,9 +535,20 @@ ApplicationWindow {
                             }
                     }
                 }
+                Button {
+                    text: "clear Targets"
+                    onClicked : { 
+                        Julia.clearTargets();
+                        infoTar.text="cleared"
+                        infoTar.color="blue"
 
-                    Label { id: infoTar; text: "" }         
+                    }
+                }
+
+                // clearTargets
+
             }// End Add Target 
+                    Label { id: infoTar; text: "" }         
 
              Button {
                     text: "Generate Random Targets"
@@ -685,6 +696,22 @@ ApplicationWindow {
                     }
                 }
         }
+
+        Button {
+                text: "Process Intersection Algorithm"
+                onClicked : { 
+
+                    if(Julia.checkArrSimulate())
+                    {
+                        Julia.processIntersectionAlgorithm()
+                    }
+                    else{
+                        processInfo.text = "Can't Sim, Missing RX"
+                        processInfo.color = "red"
+                    }
+                }
+        }
+
         
         Button {
                 text: "View Image"

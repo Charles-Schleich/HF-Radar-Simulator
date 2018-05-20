@@ -1,8 +1,0 @@
-id,typ,ex,ey,colour
-TX0,TX,10000,10000,green
-RX0,RX,10037,10000,orange
-RX1,RX,10074,10000,orange
-RX2,RX,10111,10000,orange
-RX3,RX,10148,10000,orange
-RX4,RX,10185,10000,orange
-TAR0,TAR,10111,100000,blue

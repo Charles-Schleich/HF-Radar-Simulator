@@ -33,7 +33,8 @@ end
 txArr = AntennaObject[]
 rxArr = AntennaObject[]
 targetArr = AntennaObject[]
-image_ =[]
+image_FA =[]
+image_IA =[]
 xRef=0
 yRef=0
 distscale = 100
@@ -122,6 +123,14 @@ function makeRandomTargets()
     end
     updateModel();
 end
+
+function clearTargets()
+    global targetArr = AntennaObject[];
+    updateModel();
+end
+
+
+
 
 #   _____   _____ __      __
 #  / ____| / ____|\ \    / /
@@ -447,30 +456,37 @@ function processFocusingAlgorithm()
     if (rxArr[1].wfstage=="None")
         outputRxAntennaWaveforms(rxArr,txArr,targetArr);
     end
-
     mFilter() # matched filtere the output 
     IQ_bb()   # make baseband IQ data 
 
-    dataMatrix = []
-    for i in rxArr
-        push!(dataMatrix, (i.wf))
-    end
-
     # FIRST METHOD
-    rtm = focussingAlgorithm(txArr,rxArr);
-
-    # image =imageProcessingAlgorithm(rtm);
+    rtm = focusingAlgorithm(txArr,rxArr);
+    # image =focusingAlgorithm(rtm);
     image =imaging2(rtm);
-    
-    global image_ = image;
 
+    global image_FA = image;
 
-    # SECOND METHOD
-    # image = imageProcessing2(txArr,rxArr) 
-    # global image_ = image;
 
     println("END")
 end
+
+
+function processIntersectionAlgorithm()
+    # make post window Match filter figure
+
+    if (rxArr[1].wfstage=="None")
+        outputRxAntennaWaveforms(rxArr,txArr,targetArr);
+    end
+    mFilter() # matched filtere the output 
+    IQ_bb()   # make baseband IQ data 
+
+    # SECOND METHOD
+    image = imageProcessing2(txArr,rxArr) 
+    global image_IA = image;
+
+end
+
+
 
 function viewImage()
     if image_!=[]
@@ -515,7 +531,7 @@ allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 recieveModel = ListModel(rxArr)
 
-@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm mFilter IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot viewImage
+@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm mFilter IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot viewImage clearTargets processIntersectionAlgorithm
 
 @qmlapp "radar.qml" startModel fileModel recieveModel
 exec()

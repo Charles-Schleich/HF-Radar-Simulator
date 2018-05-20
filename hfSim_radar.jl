@@ -390,9 +390,8 @@ end
  #                                           __/ |                __/ |                                       
  #                                          |___/                |___/                                        
 
-# dist2(x1,y1,x2,y2) = sqrt( (x1-x2)^2 + (y1-y2)^2 )
-# calcSide(s1,s2,a)= ( (s1^2+s2^2) -2*s1*s2*cosd(a) )^0.5
-function focussingAlgorithm(txArr,rxArr)
+
+function focusingAlgorithm(txArr,rxArr)
 
     numSamples = length(rxArr[1].wf)  
     N_antennas = length(rxArr)  
@@ -409,8 +408,9 @@ function focussingAlgorithm(txArr,rxArr)
     global RthetaMatrix = [];
     # rangeRes
     # use Range
+    # for i in 1:10:200000  # Range ROWS
     for i in 90000:10:100000  # Range ROWS
-        
+
         if((i-1)%20000==0)
             println( i/2000,"% ");
         end
@@ -420,19 +420,15 @@ function focussingAlgorithm(txArr,rxArr)
         for j in -60:1:60 # Theta     Cols
 
             tref = (2*i)/c;  # Calc Every Time
-
-            # SampleLocation = tref/t_max
             vfoc = 0;
 
             for n in 1:N_antennas
 
-                xoffRef = n * distBetwAnennas;
-                # td = calctimeDelay(i, j, xoffRef); # calculates total time delay
-                # td = (i + calcSide(i, xoffRef,j))/c
                 exn=rxArr[n].ex
                 eyn=rxArr[n].ey
 
                 a2rp = dist2(exn,eyn,centerx,centery); # dist Antenna to ref point
+                # r_Antenna_focalpoint = calcSide(a2rp ,i, 120-j)
                 r_Antenna_focalpoint = calcSide(a2rp ,i, 90-j)
 
                 td = (i + r_Antenna_focalpoint)/c
@@ -441,8 +437,13 @@ function focussingAlgorithm(txArr,rxArr)
                 if tindex>1
                     vfoc = vfoc + 0;
                 else
-                    indexLocation = ceil(Int, numSamples* tindex );
-                    UpperSample = (rxArr[n].wf)[indexLocation]*exp(-im*2*pi*f0*(td-tref));
+                    upperIndex = ceil(Int, numSamples* tindex );
+                    # lowerIndex = floor(Int, numSamples* tindex );
+                    
+                    UpperSample = (rxArr[n].wf)[upperIndex]*exp(im*2*pi*f0*(td-tref));
+
+                    # lowerSample = (rxArr[n].wf)[lowerIndex]*exp(im*2*pi*f0*(td-tref));
+
                     vfoc = vfoc + UpperSample;
 
                     # indexLocationtop = ceil(Int, numSamples* tindex );
@@ -497,112 +498,8 @@ end # End function
 dist(x,y) = sqrt( (x-(x_Res/2))^2 + (y-y_Res)^2 )
 calcangle(x,y)= atand(y/x)
 
-function imageProcessingAlgorithm(rtmatrix)
-    println("--------------------------")
-    dataArray=rtmatrix;
-    global x_Res=1000
-    global y_Res=1000
-    
-    r_bins = length(rtmatrix)
-    a_bins = length(rtmatrix[1])
-    r_jumps= floor(Int,r_bins/y_Res)
-    a_jumps= ceil(Int,a_bins/2) 
 
-    println("R bins: ",r_bins)
-    println("A bins: ",a_bins)
-    println("r jumps: ",r_jumps)
-    println("a jumps: ",a_jumps)
-
-########################################################################
-    global imageArr= [];
-    for y in 1:y_Res
-        rowData = [];
-        for x in 1:x_Res
-            foc=0; 
-
-            if(x==(x_Res/2) && y == (y_Res))
-                theta = 90;
-            else
-                theta = calcangle(x-(x_Res/2),(y_Res)-y);
-            end
-
-            range_=(dist(x,y)*r_jumps);
-
-            if (range_==0)
-                range_=1
-            end
-
-
-            if (range_>20000) ||  ( ( theta < 30) && (theta > -30))# No Data Region 
-                foc=0; 
-            else
-                if (theta<0) # Negative Degrees i.e. First half of angle bins.
-                    newtheta = -theta - 90; # convert from -30 -> -90 to -60 -> 0
-                    arrIndex = newtheta + a_jumps; # length of subArray
-
-                    topTheta = ceil(Int,arrIndex);
-                    bottomTheta= floor(Int,arrIndex);
-                    topR   = ceil(Int,range_);
-                    bottomR= floor(Int,range_);
-
-                    println()
-                    println(topR, " ",bottomR, " " ,topTheta," ",bottomTheta)
-                    break
-
-                    foc1 = dataArray[topR][topTheta];
-                    foc2 = dataArray[topR][bottomTheta];
-                    foc3 = dataArray[bottomR][topTheta];
-                    foc4 = dataArray[bottomR][bottomTheta];
-
-                    foc=sum([foc1,foc2,foc3,foc4]);
-
-                else        #Positive Degrees  Second half of angle bings
-                    newtheta = -theta + 90; # convert from 90 -> 30 to 0 -> 60
-                    arrIndex = newtheta + a_jumps; 
-
-                    topTheta = ceil(Int,arrIndex);
-                    bottomTheta= floor(Int,arrIndex);
-                    topR   = ceil(Int,range_);
-                    bottomR= floor(Int,range_);
-
-                    foc1 = dataArray[topR][topTheta];
-                    foc2 = dataArray[topR][bottomTheta];
-                    foc3 = dataArray[bottomR][topTheta];
-                    foc4 = dataArray[bottomR][bottomTheta];
-
-                    foc=sum([foc1,foc2,foc3,foc4]);
-                end
-                break
-            end
-            break
-            push!(rowData, foc);    
-        end
-        break
-        push!(imageArr,rowData);
-        # println(y)
-    end
-    println("Finished Image Creation")
-
-    imageArr = hcat(imageArr...)';
-    imgArr = abs.(imageArr)
-
-    println("show")
-    # global imgArr = hcat(imageArr...)';
-    figure();
-    imshow(imgArr);
-    imshow(imgArr);
-
-
-    tight_layout();    
-    println("shown")
-    return(imgArr)
-end
-
-
-
-
-
-function imaging2(rtheta)
+function imaging2(rtheta) # Matrix
     (rNum,aNum) = size(rtheta)
     global x_Res=1000
     global y_Res=1000
@@ -614,7 +511,7 @@ function imaging2(rtheta)
     for y in 1:y_Res
         rowData = [];
         for x in 1:x_Res
-        foc=0
+            foc=0
 
             if(x==(x_Res/2) && y == (y_Res))
                 theta = 90;
@@ -631,29 +528,44 @@ function imaging2(rtheta)
                     newtheta = -theta - 90; # convert from -30 -> -90 to -60 -> 0
                     newNewtheta = newtheta + a_jumps; # length of subArray
 
-                    thetaArrIndex = ceil(Int,newNewtheta);
-                    rangeIndex= ceil(Int,range_);
-                    # println("a ",x, " ",y, " ",rangeIndex," ", thetaArrIndex )
-                   
-                    foc = rtheta[rangeIndex,thetaArrIndex];
+                    # thetaArrIndex = ceil(Int,newNewtheta);
+                    # rangeIndex= ceil(Int,range_);
+                    # foc = rtheta[rangeIndex,thetaArrIndex];
+
+
+                    topTheta , bottomTheta = ceil(Int,newNewtheta) , floor(Int,newNewtheta);
+                    topR , bottomR  = ceil(Int,range_) , floor(Int,range_);
+                    foc1 = rtheta[topR,topTheta];
+                    foc2 = rtheta[topR,bottomTheta];
+                    foc3 = rtheta[bottomR,topTheta];
+                    foc4 = rtheta[bottomR,bottomTheta];
+                    foc  = sum([foc1,foc2,foc3,foc4]);
+
+                    # println(foc1," " ,foc2," " ,foc3," " ,foc4)
 
                 else        #Positive Degrees  Second half of angle bings
                     newtheta = -theta + 90; # convert from 90 -> 30 to 0 -> 60
                     newNewtheta = newtheta + a_jumps; 
 
-                    thetaArrIndex = ceil(Int,newNewtheta);
-                    rangeIndex= ceil(Int,range_);
-                    # println("b ", x, " ",y, " ",rangeIndex," ", thetaArrIndex )
+                    # thetaArrIndex = ceil(Int,newNewtheta);
+                    # rangeIndex= ceil(Int,range_);
+                    # foc = rtheta[rangeIndex,thetaArrIndex];
 
-                    foc = rtheta[rangeIndex,thetaArrIndex];
+
+                    topTheta , bottomTheta = ceil(Int,newNewtheta) , floor(Int,newNewtheta);
+                    topR , bottomR  = ceil(Int,range_) , floor(Int,range_);
+                    foc1 = rtheta[topR,topTheta];
+                    foc2 = rtheta[topR,bottomTheta];
+                    foc3 = rtheta[bottomR,topTheta];
+                    foc4 = rtheta[bottomR,bottomTheta];
+                    foc  = sum([foc1,foc2,foc3,foc4]);
 
                 end
             else
                 foc=0
             end
 
-
-        push!(rowData, foc);  
+            push!(rowData, foc);  
         end # End x loop
     push!(imageData,rowData);  
     end #end y loop
@@ -747,37 +659,33 @@ function imageProcessing2(txArr,rxArr)
                     else
                         top = i.wf[topIndex]
                     end
-
-                    # top = i.wf[topIndex]
-
                     focRx = mean([top,bot])
                     foc = foc + focRx
                     # BLUURR IN RANGE
-
                 end
             end # END RXs
             push!(rowData,foc) 
         end # END X
             push!(imageArr,rowData) 
     end # END Y
-    # SHOWIMAGE
+    # SHOWIMAGE    
+
+    # imageArr = hcat(imageData...)';
+    # imgArrScene = abs.(imageArr)
     
-    for i in 1:length(imageArr)
-        imageArr[i]= abs.(imageArr[i]);
-    end
-
     global imgArr = hcat(imageArr...)';
+    imageArr = abs.(imageArr)
     currentMax = maximum(imgArr);
-
     (rows,cols) = size(imgArr)
+
 
     for i in 1:rows
         for j in 1:cols
             imgArr[i,j] = imgArr[i,j]/currentMax;
         end
     end
-    currentMax = maximum(imgArr);
 
+    currentMax = maximum(imgArr);
 
     for i in 1:rows
         for j in 1:cols
