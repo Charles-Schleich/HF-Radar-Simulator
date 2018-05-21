@@ -55,7 +55,9 @@ function initializeSim(centreF, bandW, sampleRate,pulseT, sW)
     global  sWind    = ceil(Int,sW/2)
 
     global  K = B/T;    # Chirp rate
-    global td = 0.6*T; # Chirp delay
+    # global td = 0.6*T; # Chirp delay
+    global td = 0; # Chirp delay
+
 
 
     global v_tx = cos.( 2*pi*(f0*(t-td) + 0.5*K*(t-td).^2) ).*rect((t-td)/T);
@@ -88,7 +90,8 @@ function defaultSimParams()
     # global T = (10E-6); # Chirp pulse length
 
     global K  = B/T;    # Chirp rate
-    global td = 0.6*T; #0.6*T; # Chirp delay
+    # global td = 0.6*T; #0.6*T; # Chirp delay
+    global td = 0; # Chirp delay
 
     global  r_Blind  =  (T*c)/2
     global  rangeRes =  c/(2*B)
@@ -392,7 +395,7 @@ end
  #                                          |___/                |___/                                        
 
 
-function focusingAlgorithm(txArr,rxArr)
+function focusingAlgorithm(txArr,rxArr,rl,ru,al,au)
 
     numSamples = length(rxArr[1].wf)  
     N_antennas = length(rxArr)  
@@ -402,15 +405,15 @@ function focusingAlgorithm(txArr,rxArr)
     centerx = (lastAntenna.ex + firstAntenna.ex)/2
     centery = (lastAntenna.ey + firstAntenna.ey)/2
 
-    println(centerx ," ---- ", centery)
+    println("Centre: ",centerx ," ---- ", centery)
 
     distBetwAnennas = (freq_to_wavelen(f0))/2;
     
     global RthetaMatrix = [];
     # rangeRes
     # use Range
-    for i in 1:10:200000  # Range ROWS
-    # for i in 80000:10:110000  # Range ROWS
+    for i in rl:10:ru  # Range ROWS
+    # for i in 90000:10:100000  # Range ROWS
 
         if((i-1)%20000==0)
             println( i/2000,"% ");
@@ -418,8 +421,9 @@ function focusingAlgorithm(txArr,rxArr)
 
         intermediate = [];
         # for j in -90:1:90 # Theta     Cols
-        for j in -60:1:60 # Theta     Cols
-
+        # for j in -60:1:60 # Theta     Cols
+        for j in al:1:au # Theta     Cols
+            # println(j)
             tref = (2*i)/c;  # Calc Every Time
             vfoc = 0;
 
@@ -430,33 +434,50 @@ function focusingAlgorithm(txArr,rxArr)
 
                 a2rp = dist2(exn,eyn,centerx,centery); # dist Antenna to ref point
                 # r_Antenna_focalpoint = calcSide(a2rp ,i, 120-j)
-                r_Antenna_focalpoint = calcSide(a2rp ,i, 90-j)
+                if j<0
+                    r_Antenna_focalpoint = calcSide(a2rp ,i, 90+j)
+                else
+                    r_Antenna_focalpoint = calcSide(a2rp ,i, 90-j)
+                end
 
-                td = (i + r_Antenna_focalpoint)/c
-                tindex = td / t_max;
 
-                if tindex>1
+                tdAnt = (i + r_Antenna_focalpoint)/c
+                tindex = tdAnt / t_max;
+
+                if tindex>1 
                     vfoc = vfoc + 0;
                 else
                     upperIndex = ceil(Int, numSamples* tindex );
-                    # lowerIndex = floor(Int, numSamples* tindex );
-                    
-                    UpperSample = (rxArr[n].wf)[upperIndex]*exp(im*2*pi*f0*(td-tref));
+                    lowerIndex = floor(Int, numSamples* tindex );
 
-                    # lowerSample = (rxArr[n].wf)[lowerIndex]*exp(im*2*pi*f0*(td-tref));
+                    # println(upperIndex," ", lowerIndex)
+                    # a=readline();
 
-                    vfoc = vfoc + UpperSample;
+                    UpperSample = (rxArr[n].wf)[upperIndex]*exp(im*2*pi*f0*(tdAnt-tref));
+                    if lowerIndex>0
+                        lowerSample = (rxArr[n].wf)[lowerIndex]*exp(im*2*pi*f0*(tdAnt-tref));
+                    else
+                        lowerSample=0
+                    end
+
+                    vfoc = vfoc + UpperSample + lowerSample;
 
                 end
 
             end # End antennas
+            
             push!(intermediate,vfoc) ;
+
         end # End Cols
-            push!(RthetaMatrix,intermediate);
+        
+        push!(RthetaMatrix,intermediate);
     end
      println("End");
 
     global glRTM = RthetaMatrix;
+    
+    # figure();
+    # plot(glRTM[9500])
 
     rtMatrix=hcat(RthetaMatrix...)'
 
@@ -607,8 +628,8 @@ function imageProcessing2(txArr,rxArr)
     numSamples = length(rxArr[1].wf)  
     print("NumSamples ",numSamples)  
     println("--------------------------")
-    global x_Res=1000
-    global y_Res=1000
+    global x_Res=1500
+    global y_Res=1500
     global imageArr= [];
     rangeBins = 200000/x_Res
 

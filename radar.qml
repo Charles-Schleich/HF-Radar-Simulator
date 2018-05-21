@@ -2,6 +2,7 @@
 // import QtQuick 2.0
 import QtQuick 2.7
 import QtQuick.Controls 1.0
+import QtQuick.Controls.Styles 1.4
 import QtQuick.Layouts 1.0
 import org.julialang 1.0
 
@@ -146,7 +147,7 @@ ApplicationWindow {
 
 /////RECIEVE ANTENNAS
             Label { 
-                text: "Antenna Array Start Coordinates" 
+                text: "Antenna Array Center Point" 
                 font.underline : true
             }
 
@@ -170,7 +171,7 @@ ApplicationWindow {
                  Label { id:ryStar; color:"red"; text: "" }
             }
              
-            Label { id: instructRec; text: "Note: RX antennas 2->N will be auto placed at\n 1/2 Wavelength intervals for centre frequency"; color: "blue"}
+            Label { id: instructRec; text: "Note: RX antennas 1->N will be auto placed at\n 1/2 Wavelength intervals around centre point"; color: "blue"}
 
 
             RowLayout {
@@ -324,6 +325,10 @@ ApplicationWindow {
                 
             }
         RowLayout{
+
+        ColumnLayout{
+        Label { id: simwaveform; text: "Simulated Waveforms" ;font.underline : true; }
+            
         TableView {
                     id : rxTable
                     Layout.preferredWidth :200
@@ -343,6 +348,7 @@ ApplicationWindow {
 
                         model: recieveModel
                     }
+        }
      // Label { id: rxRow; text: rxTable.currentRow ;}
      ColumnLayout{
 
@@ -634,7 +640,6 @@ ApplicationWindow {
 
             Label { id:infoScene; text: "" }
 
-        Label { text: "" }   
         Label { text: "Scenario objects";  font.underline : true }   
 
         TableView {
@@ -665,57 +670,117 @@ ApplicationWindow {
                         model: startModel
                     }
 
-        Button {
-                text: "Find Single Point"
-                onClicked : { 
-                    if(Julia.checkSinglePoint())
-                    {
+        Label { text: "Focusing Bounds";  font.underline : true }   
 
+        RowLayout{
+            Label { text: "Range:";  font.underline : true }   
+            TextField {
+                        id: rangeLower
+                        placeholderText: qsTr("0m->200000m")
+                        validator: IntValidator { bottom: 0; top: 200000;}
                     }
-                    else{
-
-                        processInfo.text = "Single Point Target detection requires one target"
-                        processInfo.color = "red"
-
+            TextField {
+                        id: rangeUpper
+                        placeholderText: qsTr("0m->200000m")
+                        validator: IntValidator { bottom: 0; top: 200000;}
                     }
-
-                }
         }
+
+        RowLayout{
+            Label { text: "Angle:";  font.underline : true }   
+            TextField {
+                        id: angleLower
+                        placeholderText: qsTr("-60->0")
+                        validator: IntValidator { bottom: (-60); top: (0);}
+                    }
+            TextField {
+                        id: angleUpper
+                        placeholderText: qsTr("0->60")
+                        validator: IntValidator { bottom: 0; top: 60;}
+                    }
+        }
+
+
+        // Button {
+        //         text: "Find Single Point"
+        //         onClicked : { 
+        //             if(Julia.checkSinglePoint())
+        //             {
+        //             }
+        //             else{
+
+        //                 processInfo.text = "Single Point Target detection requires one target"
+        //                 processInfo.color = "red"
+        //             }
+        //         }
+        // }
 
         Button {
                 text: "Process Focusing Algorithm"
-                onClicked : { 
+                
+                style: ButtonStyle {
+                    label: Text {
+                        color: "blue"
+                        text: control.text
+                    }
+                }
 
-                    if(Julia.checkArrSimulate())
-                    {
-                        Julia.processFocusingAlgorithm()
+                onClicked : {
+
+                    if(Julia.checkArrSimulate()){
+                        Julia.processFocusingAlgorithm(rangeUpper.text,rangeLower.text,angleUpper.text,angleLower.text)
                     }
                     else{
                         processInfo.text = "Can't Sim, Missing RX"
                         processInfo.color = "red"
                     }
-                }
+
+                    // if(rangeLower.text =="" || rangeUpper.text=="" || angleLower.text =="" || angleUpper.text=="")
+                    // {
+                    //     if(Julia.checkArrSimulate()){ Julia.processFocusingAlgorithm("--","","","") }
+                    //     else{
+                    //         processInfo.text = "Cant Simulate, check elements/targets"
+                    //         processInfo.color = "red"
+                    //     }
+                    // }
+                    // else
+                    // {
+                    //     if( Julia.checkBoundsSize(rangeLower.text,rangeUpper.text)  )
+                    //     {
+                    //         if(Julia.checkBoundsSize(angleLower.text,angleUpper.text))
+                    //         {
+                    //             if(Julia.checkArrSimulate()){
+                    //                 Julia.processFocusingAlgorithm(rangeUpper.text,rangeLower.text,angleUpper.text,angleLower.text)
+                    //             }
+                    //             else{
+                    //                 processInfo.text = "Can't Sim, Missing RX"
+                    //                 processInfo.color = "red"
+                    //             }
+                    //         }
+                    //         else{
+                    //             processInfo.text = "Can't Focus with incorrect Angle bounds"
+                    //             processInfo.color = "red"
+                    //         }
+                    //     }
+                    //     else{
+                    //         processInfo.text = "Can't Focus with incorrect Range bounds"
+                    //         processInfo.color = "red"
+                    //     }
+                    // }
+
+                } // END OF ONCLICKED
         }
 
-        Button {
-                text: "Process Intersection Algorithm"
-                onClicked : { 
-
-                    if(Julia.checkArrSimulate())
-                    {
-                        Julia.processIntersectionAlgorithm()
-                    }
-                    else{
-                        processInfo.text = "Can't Sim, Missing RX"
-                        processInfo.color = "red"
-                    }
-                }
-        }
-
-                    Label { id: nada; text: "" }
-        
         Button {
                 text: "View Image Focusing Algorithm"
+
+                style: ButtonStyle {
+                    label: Text {
+                        color: "blue"
+                        text: control.text
+                    }
+                }
+
                 onClicked : { 
 
                     if(Julia.viewImageFA()==1)
@@ -731,7 +796,36 @@ ApplicationWindow {
         }
 
         Button {
+                text: "Process Intersection Algorithm"
+                style: ButtonStyle {
+                    label: Text {
+                        color: "green"
+                        text: control.text
+                    }
+                }
+
+                onClicked : { 
+                    if(Julia.checkArrSimulate())
+                    {
+                        Julia.processIntersectionAlgorithm()
+                    }
+                    else{
+                        processInfo.text = "Can't Sim, Missing RX"
+                        processInfo.color = "red"
+                    }
+                }
+        }
+
+                    // Label { id: nada; text: "" }
+        
+        Button {
                 text: "View Image Intersection Algorithm"
+                style: ButtonStyle {
+                    label: Text {
+                        color: "green"
+                        text: control.text
+                    }
+                }
                 onClicked : { 
 
                     if(Julia.viewImageIA()==1)

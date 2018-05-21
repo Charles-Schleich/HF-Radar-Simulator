@@ -422,6 +422,16 @@ end
  # |_|   \___/  \___| \__,_||___/
                                
                               
+function checkBoundsSize(low::String , upp::String )
+    println("check: ",low," ",upp)
+    lower = parse(Float64,low);
+    upper = parse(Float64,upp);
+    if lower > upper 
+        return false
+    else 
+        return true
+    end
+end
 
 
 function mFilter()
@@ -450,8 +460,35 @@ function IQ_bb()
 end
 
 
-function processFocusingAlgorithm()
-    # make post window Match filter figure
+function processFocusingAlgorithm(ru,rl,au,al)
+
+    if rl==""
+        rl=1
+    else
+        rl=parse(Int64,rl);  
+    end
+    if ru==""
+        ru=200000
+    else
+        ru=parse(Int,ru);  
+    end
+
+    if al==""
+        al=-60
+    else
+        al=parse(Int64,al);
+    end
+    if au==""
+        au=60
+    else
+        au=parse(Int64,au);
+    end
+
+    println("Simulation Bounds")
+    println("range :", rl , " to ", ru)
+    println("angle :",al , " to ", au)
+
+    # return() 
 
     if (rxArr[1].wfstage=="None")
         outputRxAntennaWaveforms(rxArr,txArr,targetArr);
@@ -460,8 +497,16 @@ function processFocusingAlgorithm()
     IQ_bb()   # make baseband IQ data 
 
     # FIRST METHOD
-    rtm = focusingAlgorithm(txArr,rxArr);
-    # image =focusingAlgorithm(rtm);
+
+    # data = [] 
+    # for i in rxArr
+    #     push!(data,angle(i.wf[19013]))
+    # end
+    # plot(data)
+    # xlabel("Element number")
+    # ylabel("Phase ")
+
+    rtm = focusingAlgorithm(txArr,rxArr,rl,ru,al,au);
     image =imaging2(rtm);
 
     global image_FA = image;
@@ -542,7 +587,7 @@ allElem = [txArr; targetArr;rxArr]
 startModel= ListModel(allElem)
 recieveModel = ListModel(rxArr)
 
-@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm mFilter IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot viewImageFA viewImageIA clearTargets processIntersectionAlgorithm
+@qmlfunction targetExists addTarget addRxAntennas getElemNumber emptyArrays readInCSV saveScenario isfile simulate tunnelPrint appendModel checkArrSimulate getFileNames loadDefaults initParams makeRandomTargets calcBlind calcSpacing checkSinglePoint processFocusingAlgorithm mFilter IQ_bb showAbsRXWaveform viewPhase showRXWaveform addToPlotRXWaveform clearplot viewImageFA viewImageIA clearTargets processIntersectionAlgorithm checkBoundsSize
 
 @qmlapp "radar.qml" startModel fileModel recieveModel
 exec()
