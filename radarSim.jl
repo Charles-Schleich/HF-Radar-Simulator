@@ -352,7 +352,7 @@ end
 
 function showRXWaveform(rxNum)
 
-    close("all")
+    # close("all")
     figure("Recieve Antenna Waveform")
     title_ = string("Recieve Antenna ", rxNum+1," Waveform")
     title(title_)
@@ -367,10 +367,10 @@ end
 
 
 function showAbsRXWaveform(rxNum)
-    close("all")
+    # close("all")
 
     figure("Abs of RX")
-    title_ = string("Recieve Antenna", rxNum+1,"Wavform")
+    title_ = string("Recieve Antenna Waveforms Magnitude Superimposed")
     title(title_)
     xlabel("Range")
     ylabel("Amplitude")
@@ -381,10 +381,10 @@ function showAbsRXWaveform(rxNum)
 end
 
 function viewPhase(rxNum)
-    close("all")
+    # close("all")
 
     figure("Phase of RX")
-    title_ = string("Recieve Antenna", rxNum+1,"Wavform")
+    title_ = string("Recieve Antenna Waveforms Angle Superimposed")
     title(title_)
     xlabel("Range")
     ylabel("Amplitude")
@@ -497,18 +497,24 @@ function processFocusingAlgorithm(ru,rl,au,al)
     IQ_bb()   # make baseband IQ data 
 
     # FIRST METHOD
+    if (ru == 200000 && rl==1)
+        
+        data = [] 
+        for i in rxArr
+            push!(data,angle(i.wf[19013]))
+        end
+        plot(data)
+        xlabel("Element number")
+        ylabel("Phase ")
 
-    # data = [] 
-    # for i in rxArr
-    #     push!(data,angle(i.wf[19013]))
-    # end
-    # plot(data)
-    # xlabel("Element number")
-    # ylabel("Phase ")
+    end
+
+    
+
+
 
     rtm = focusingAlgorithm(txArr,rxArr,rl,ru,al,au);
     image =imaging2(rtm);
-
     global image_FA = image;
 
 

@@ -535,7 +535,7 @@ ApplicationWindow {
                         else{
                             var num = Julia.getElemNumber("TAR")
                             var id= "TAR" + num
-                            Julia.addTarget("100000", "100000")
+                            Julia.addTarget("100000", "105000")
                             infoTar.text = "Target Added"
                             infoTar.color = "green"
                             }

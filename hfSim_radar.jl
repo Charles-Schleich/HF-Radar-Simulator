@@ -438,14 +438,8 @@ function focusingAlgorithm(txArr,rxArr,rl,ru,al,au)
                     a2rp=a2rp*(-1)
                 end
 
-                # if j<0
                 r_Antenna_focalpoint = calcSide(a2rp ,i, 90+j)
-                # else
-                    # r_Antenna_focalpoint = calcSide(a2rp ,i, 90-j)
-                # end
-
-                # println(r_Antenna_focalpoint," " , n, " " , j)
-
+       
                 tdAnt = (i + r_Antenna_focalpoint)/c
                 tindex = tdAnt / t_max;
 
@@ -454,9 +448,6 @@ function focusingAlgorithm(txArr,rxArr,rl,ru,al,au)
                 else
                     upperIndex = ceil(Int, numSamples* tindex );
                     lowerIndex = floor(Int, numSamples* tindex );
-
-                    # println(upperIndex," ", lowerIndex)
-                    # a=readline();
 
                     if j>0
                         UpperSample = (rxArr[n].wf)[upperIndex]*exp(im*2*pi*f0*(tdAnt-tref));
@@ -487,8 +478,10 @@ function focusingAlgorithm(txArr,rxArr,rl,ru,al,au)
 
     global glRTM = RthetaMatrix;
 
-    # figure();
-    # plot(glRTM[9500])
+    # if ru == 200000 && rl=1
+    #     figure();
+    #     plot(glRTM[10000])
+    # end
 
     rtMatrix=hcat(RthetaMatrix...)'
 
@@ -499,7 +492,6 @@ function focusingAlgorithm(txArr,rxArr,rl,ru,al,au)
     imshow(imgArrRTheta);
     title("R-Theta Matrix");
     tight_layout();  
-
 
 
     # a = fft(imgArrRTheta)
@@ -578,7 +570,6 @@ function imaging2(rtheta) # Matrix
                     # thetaArrIndex = ceil(Int,newNewtheta);
                     # rangeIndex= ceil(Int,range_);
                     # foc = rtheta[rangeIndex,thetaArrIndex];
-
 
                     topTheta , bottomTheta = ceil(Int,newNewtheta) , floor(Int,newNewtheta);
                     topR , bottomR  = ceil(Int,range_) , floor(Int,range_);
@@ -708,31 +699,12 @@ function imageProcessing2(txArr,rxArr)
     end # END Y
     # SHOWIMAGE    
 
-    # imageArr = hcat(imageData...)';
-    # imgArrScene = abs.(imageArr)
-    
     global imgArr = hcat(imageArr...)';
     println(size(imgArr))
     imgArr = abs.(imgArr)
     currentMax = maximum(imgArr);
     (rows,cols) = size(imgArr)
 
-
-    # for i in 1:rows
-    #     for j in 1:cols
-    #         imgArr[i,j] = imgArr[i,j]/currentMax;
-    #     end
-    # end
-
-    # currentMax = maximum(imgArr);
-
-    # for i in 1:rows
-    #     for j in 1:cols
-    #         if imgArr[i,j] < currentMax*0.1
-    #                 imgArr[i,j] = 0
-    #         end        
-    #      end
-    # end
 
     println("show")
     figure();
