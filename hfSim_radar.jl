@@ -433,13 +433,18 @@ function focusingAlgorithm(txArr,rxArr,rl,ru,al,au)
                 eyn=rxArr[n].ey
 
                 a2rp = dist2(exn,eyn,centerx,centery); # dist Antenna to ref point
-                # r_Antenna_focalpoint = calcSide(a2rp ,i, 120-j)
-                if j<0
-                    r_Antenna_focalpoint = calcSide(a2rp ,i, 90+j)
-                else
-                    r_Antenna_focalpoint = calcSide(a2rp ,i, 90-j)
+
+                if n>(N_antennas/2)
+                    a2rp=a2rp*(-1)
                 end
 
+                # if j<0
+                r_Antenna_focalpoint = calcSide(a2rp ,i, 90+j)
+                # else
+                    # r_Antenna_focalpoint = calcSide(a2rp ,i, 90-j)
+                # end
+
+                # println(r_Antenna_focalpoint," " , n, " " , j)
 
                 tdAnt = (i + r_Antenna_focalpoint)/c
                 tindex = tdAnt / t_max;
@@ -453,14 +458,20 @@ function focusingAlgorithm(txArr,rxArr,rl,ru,al,au)
                     # println(upperIndex," ", lowerIndex)
                     # a=readline();
 
-                    UpperSample = (rxArr[n].wf)[upperIndex]*exp(im*2*pi*f0*(tdAnt-tref));
-                    if lowerIndex>0
-                        lowerSample = (rxArr[n].wf)[lowerIndex]*exp(im*2*pi*f0*(tdAnt-tref));
-                    else
-                        lowerSample=0
+                    if j>0
+                        UpperSample = (rxArr[n].wf)[upperIndex]*exp(im*2*pi*f0*(tdAnt-tref));
+                    else 
+                        UpperSample = (rxArr[n].wf)[upperIndex]*exp(im*2*pi*f0*(tdAnt-tref));
                     end
 
-                    vfoc = vfoc + UpperSample + lowerSample;
+                    # if lowerIndex>0
+                    #     lowerSample = (rxArr[n].wf)[lowerIndex]*exp(im*2*pi*f0*(tdAnt-tref));
+                    # else
+                    #     lowerSample=0
+                    # end
+                    # println(r_Antenna_focalpoint," " , n, " " , j)
+
+                    vfoc = vfoc + UpperSample #+ lowerSample;
 
                 end
 
@@ -475,7 +486,7 @@ function focusingAlgorithm(txArr,rxArr,rl,ru,al,au)
      println("End");
 
     global glRTM = RthetaMatrix;
-    
+
     # figure();
     # plot(glRTM[9500])
 
