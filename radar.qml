@@ -1,5 +1,9 @@
+ 
+ // High Frequency Radar Simulator 
+ // University of Capetown, Electrical and Engieering Undergraduate Honours Thesis
+ // Charles Schleich 
+ // SCHCHA027
 
-// import QtQuick 2.0
 import QtQuick 2.7
 import QtQuick.Controls 1.0
 import QtQuick.Controls.Styles 1.4

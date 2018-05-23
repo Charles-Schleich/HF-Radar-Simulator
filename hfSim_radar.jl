@@ -1,10 +1,8 @@
+# High Frequency Radar Simulator 
+# University of Capetown, Electrical and Engieering Undergraduate Honours Thesis 2018
+# Charles Schleich 
+# SCHCHA027
 
-# import PyPlot
-
-# import ImageView
-# import Images
-# using Plots
-# pyplot()
 using PyPlot
 
 # Helping functions 
@@ -192,36 +190,6 @@ function basebandedIQdata(v_mf) # Distance is in meters
     v_baseband = v_analytic.*exp.((-im)*2*pi*f0*t)
     return(v_baseband)
 end
-
-# This function was used to test whether there was any numeric Difference
-# between adding the raw waveforms then matched filtering the summation
-# and matched filtering each waveform and adding them post match waveform
-# i.e. Matched_Filter(a + b) vs Matched_Filter(a) +  Matched_Filter(b)
-
-# SOMETHING INTERESTING TO ADD TO REPORT 
-# SOMETHING INTERESTING TO ADD TO REPORT 
-# SOMETHING INTERESTING TO ADD TO REPORT 
-# function testRaw() 
-#     a = wavAtDist_AfterMF(150000);
-#     b = wavAtDist_AfterMF(175000);
-#     b2= wavAtDist_AfterMF(200000);
-#     f = a + b + b2
-
-#     c = wavRaw(150000);
-#     d = wavRaw(175000);
-#     d2 = wavRaw(200000);
-#     e = matchedFilter(d + c + d2); 
-
-#     close("all")
-#     plot(r, abs.(e))
-#     plot(r, abs.(f))
-#     println(f[1])
-#     println(e[1])
-#     g=f -e 
-#     figure()
-#     plot((g))
-# end
-
 
 #  ______  _             _   _____              _         
 # |  ____|(_)           | | |  __ \            | |        
@@ -455,14 +423,7 @@ function focusingAlgorithm(txArr,rxArr,rl,ru,al,au)
                         UpperSample = (rxArr[n].wf)[upperIndex]*exp(im*2*pi*f0*(tdAnt-tref));
                     end
 
-                    # if lowerIndex>0
-                    #     lowerSample = (rxArr[n].wf)[lowerIndex]*exp(im*2*pi*f0*(tdAnt-tref));
-                    # else
-                    #     lowerSample=0
-                    # end
-                    # println(r_Antenna_focalpoint," " , n, " " , j)
-
-                    vfoc = vfoc + UpperSample #+ lowerSample;
+                    vfoc = vfoc + UpperSample;
 
                 end
 
@@ -478,11 +439,6 @@ function focusingAlgorithm(txArr,rxArr,rl,ru,al,au)
 
     global glRTM = RthetaMatrix;
 
-    # if ru == 200000 && rl=1
-    #     figure();
-    #     plot(glRTM[10000])
-    # end
-
     rtMatrix=hcat(RthetaMatrix...)'
 
     println("show")
@@ -493,13 +449,6 @@ function focusingAlgorithm(txArr,rxArr,rl,ru,al,au)
     title("R-Theta Matrix");
     tight_layout();  
 
-
-    # a = fft(imgArrRTheta)
-    # b = abs.(a)
-    # figure();
-    # imshow(fftshift(b));
-    # title("R-Theta Matrix FFT");  
-    # tight_layout();  
 
     return(rtMatrix);
 end # End function
@@ -519,7 +468,7 @@ dist(x,y) = sqrt( (x-(x_Res/2))^2 + (y-y_Res)^2 )
 calcangle(x,y)= atand(y/x)
 
 
-function imaging2(rtheta) # Matrix
+function focusImaging(rtheta) # Matrix
     (rNum,aNum) = size(rtheta)
     global x_Res=1000
     global y_Res=1000
@@ -539,40 +488,35 @@ function imaging2(rtheta) # Matrix
                 theta = calcangle(x-(x_Res/2),(y_Res)-y);
             end
 
-            range_= (dist2(x,y,500,1000));
+            range_= (dist2(x,y,(x_Res/2),y_Res));
 
-            if range_ <= maxrange && y<712
+            if 1 <= range_ <= maxrange && ( -90 < theta < -30 || 30 < theta <=90 )
                 range_ = rNum*range_/maxrange
 
                 if (theta<0) # Negative Degrees i.e. First half of angle bins.
                     newtheta = -theta - 90; # convert from -30 -> -90 to -60 -> 0
-                    newNewtheta = newtheta + a_jumps; # length of subArray
-
-                    # thetaArrIndex = ceil(Int,newNewtheta);
-                    # rangeIndex= ceil(Int,range_);
-                    # foc = rtheta[rangeIndex,thetaArrIndex];
-
+                    newNewtheta = newtheta + a_jumps; # length of subArray      
 
                     topTheta , bottomTheta = ceil(Int,newNewtheta) , floor(Int,newNewtheta);
                     topR , bottomR  = ceil(Int,range_) , floor(Int,range_);
+                    # println("a: ",y," " ,x, " ",theta," ", topTheta ," ", bottomTheta," ", topR ," ", bottomR) 
+
                     foc1 = rtheta[topR,topTheta];
                     foc2 = rtheta[topR,bottomTheta];
                     foc3 = rtheta[bottomR,topTheta];
                     foc4 = rtheta[bottomR,bottomTheta];
                     foc  = sum([foc1,foc2,foc3,foc4]);
-
+                
                     # println(foc1," " ,foc2," " ,foc3," " ,foc4)
 
                 else        #Positive Degrees  Second half of angle bings
                     newtheta = -theta + 90; # convert from 90 -> 30 to 0 -> 60
                     newNewtheta = newtheta + a_jumps; 
 
-                    # thetaArrIndex = ceil(Int,newNewtheta);
-                    # rangeIndex= ceil(Int,range_);
-                    # foc = rtheta[rangeIndex,thetaArrIndex];
-
                     topTheta , bottomTheta = ceil(Int,newNewtheta) , floor(Int,newNewtheta);
                     topR , bottomR  = ceil(Int,range_) , floor(Int,range_);
+                    # println("b: ",y," " ,x, " ",theta," ", topTheta ," ", bottomTheta," ", topR ," ", bottomR) 
+
                     foc1 = rtheta[topR,topTheta];
                     foc2 = rtheta[topR,bottomTheta];
                     foc3 = rtheta[bottomR,topTheta];
@@ -582,6 +526,7 @@ function imaging2(rtheta) # Matrix
                 end
             else
                 foc=0
+
             end
 
             push!(rowData, foc);  
@@ -603,35 +548,17 @@ function imaging2(rtheta) # Matrix
 end #end function
 
 
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
-####################################
 
 dist2(x1,y1,x2,y2) = sqrt( (x1-x2)^2 + (y1-y2)^2 )
 
-function imageProcessing2(txArr,rxArr)
+function intersectionImaging(txArr,rxArr)
 
-    # global wm2=hcat(wm...)';
     numSamples = length(rxArr[1].wf)  
     print("NumSamples ",numSamples)  
     println("--------------------------")
-    global x_Res=1500
-    global y_Res=1500
+    global x_Res=1000
+    global y_Res=1000
+    println("Is this changing ? ",x_Res, " ", y_Res)  
     global imageArr= [];
     rangeBins = 200000/x_Res
 
@@ -639,7 +566,6 @@ function imageProcessing2(txArr,rxArr)
     txy = txArr[1].ey
 
     imageArr = [] 
-
 
     global indexesUsed=[]
     for y in 1:y_Res
@@ -687,8 +613,6 @@ function imageProcessing2(txArr,rxArr)
                     else
                         foc = foc+0
                     end 
-                        
-                    # focRx = mean([top,bot])
 
                     # BLUURR IN RANGE
                 end
@@ -701,15 +625,10 @@ function imageProcessing2(txArr,rxArr)
 
     global imgArr = hcat(imageArr...)';
     println(size(imgArr))
-    imgArr = abs.(imgArr)
+    imgArr = angle.(imgArr)
+    # imgArr = abs.(imgArr)
     currentMax = maximum(imgArr);
     (rows,cols) = size(imgArr)
-
-
-    println("show")
-    figure();
-    imshow(imgArr);
-    tight_layout();
 
     return(imgArr)
 end
@@ -797,16 +716,4 @@ function analysis()
     plot(abs.(v_mf_window))
 end
 
-
-# nice Scenarios
-# type  x       y  
-# TAR   193481  152713
-# TAR   16441   76389
-# TAR   137085  112856
-#       140512  158349 
-#       124539  117604
-#       45005   109994 
-#       36139   150270 
-#       141079  88953
-#       139818  89050
-#       148731  178770       
+#END FILE

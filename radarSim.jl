@@ -1,6 +1,8 @@
-#  HF Surface wave simulator
-#  Charles Schleich, SCHCHA027
-#  University of Capetown undergraduate Thesis 2018
+# High Frequency Radar Simulator 
+# University of Capetown, Electrical and Engieering Undergraduate Honours Thesis 2018
+# Charles Schleich 
+# SCHCHA027
+
 
 # import Images
 # import ImageView
@@ -114,7 +116,7 @@ end
 
 function makeRandomTargets()
     global targetArr = AntennaObject[]
-    for i in 1:10
+    for i in 1:100
         x=rand(0:200000)
         y=rand(40000:200000)
         id = string("TAR",length(targetArr)) 
@@ -496,25 +498,10 @@ function processFocusingAlgorithm(ru,rl,au,al)
     mFilter() # matched filtere the output 
     IQ_bb()   # make baseband IQ data 
 
-    # FIRST METHOD
-    if (ru == 200000 && rl==1)
-        
-        data = [] 
-        for i in rxArr
-            push!(data,angle(i.wf[19013]))
-        end
-        plot(data)
-        xlabel("Element number")
-        ylabel("Phase ")
-
-    end
-
-    
-
-
-
+    println("Focusing Algorithm")
     rtm = focusingAlgorithm(txArr,rxArr,rl,ru,al,au);
-    image =imaging2(rtm);
+
+    image = focusImaging(rtm);
     global image_FA = image;
 
 
@@ -532,8 +519,10 @@ function processIntersectionAlgorithm()
     IQ_bb()   # make baseband IQ data 
 
     # SECOND METHOD
-    image = imageProcessing2(txArr,rxArr) 
-    global image_IA = image;
+    println("Testing at Intersecction Algorithm")
+    @time image = intersectionImaging(txArr,rxArr) 
+    # global image_IA = image;
+
 
 end
 
